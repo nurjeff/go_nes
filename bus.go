@@ -16,6 +16,7 @@ func (b *Bus) Initialize() {
 	// Create CPU with reference to this bus
 	b.CPU = CPU6502{Bus: b}
 	b.CPU.Initialize()
+	b.CPU.Reset()
 }
 
 func (b *Bus) Write(addr uint16, data uint8) {

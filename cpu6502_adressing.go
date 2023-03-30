@@ -7,8 +7,8 @@ func (c *CPU6502) IMP() uint8 {
 }
 
 func (c *CPU6502) IMM() uint8 {
-	c.pc++
 	c.addr_abs = c.pc
+	c.pc++
 	return 0
 }
 

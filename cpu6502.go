@@ -27,6 +27,8 @@ type CPU6502 struct {
 	opcode   uint8
 	cycles   uint8
 
+	tmp uint16
+
 	// Instruction lookup table
 	lookup Instructions
 }
@@ -72,11 +74,16 @@ func (c *CPU6502) Clock() {
 	if c.cycles == 0 {
 		c.opcode = c.Read(c.pc)
 		c.pc++
-
-		cycles := c.lookup[c.opcode].cycles
+		addrname := runtime.FuncForPC(reflect.ValueOf(c.lookup[c.opcode].AddrMode).Pointer()).Name()
+		addrname = addrname[len(addrname)-6 : len(addrname)-3]
+		fmt.Println(c.lookup[c.opcode].name, addrname, "PC:", c.pc)
+		c.cycles = c.lookup[c.opcode].cycles
 		addrCycle := c.lookup[c.opcode].AddrMode()
 		opCycle := c.lookup[c.opcode].OpCode()
-		cycles += (addrCycle & opCycle)
+
+		c.cycles += (addrCycle & opCycle)
+
+		c.SetFlag(c.flags.U, true)
 	}
 	c.cycles--
 }
@@ -116,22 +123,70 @@ func (c *CPU6502) PrintFlags() {
 }
 
 func (c *CPU6502) PrintRegisters() {
-	fmt.Print("ACC:", c.a)
-	fmt.Printf(" - %b\n", c.a)
+	fmt.Println("ACC:", c.a)
+	//fmt.Printf(" - %b\n", c.a)
 	fmt.Println("X:", c.x)
 	fmt.Println("Y:", c.y)
 	fmt.Println("FETCH:", c.fetched)
 }
 
-/*
+func (c *CPU6502) Reset() {
+	c.a = 0
+	c.x = 0
+	c.y = 0
+	c.stkp = 0xFD
+	c.status = 0x00 | c.GetFlag(c.flags.U)
 
+	c.addr_abs = 0xFFFC
+	var lo uint16 = uint16(c.Read(c.addr_abs + 0))
+	var hi uint16 = uint16(c.Read(c.addr_abs + 1))
 
+	c.pc = (hi << 8) | lo
+	c.addr_rel = 0x0000
+	c.addr_abs = 0x0000
+	c.fetched = 0x00
 
+	c.cycles = 8
+}
 
-func (c *CPU6502) Reset()
+func (c *CPU6502) IRQ() {
+	if c.GetFlag(c.flags.I) == 0 {
+		c.Write(0x0100+uint16(c.stkp), uint8((c.pc>>8)&0x00FF))
+		c.stkp--
+		c.Write(0x0100+uint16(c.stkp), uint8(c.pc&0x00FF))
+		c.stkp--
 
-func (c *CPU6502) IRQ()
+		c.SetFlag(c.flags.B, false)
+		c.SetFlag(c.flags.U, true)
+		c.SetFlag(c.flags.I, true)
+		c.Write(0x0100+uint16(c.stkp), c.status)
+		c.stkp--
 
-func (c *CPU6502) NMI()
+		c.addr_abs = 0xFFFE
+		var lo uint16 = uint16(c.Read(c.addr_abs + 0))
+		var hi uint16 = uint16(c.Read(c.addr_abs + 1))
+		c.pc = (hi >> 8) | lo
 
-*/
+		c.cycles = 7
+	}
+}
+
+func (c *CPU6502) NMI() {
+	c.Write(0x0100+uint16(c.stkp), uint8((c.pc>>8)&0x00FF))
+	c.stkp--
+	c.Write(0x0100+uint16(c.stkp), uint8(c.pc&0x00FF))
+	c.stkp--
+
+	c.SetFlag(c.flags.B, false)
+	c.SetFlag(c.flags.U, true)
+	c.SetFlag(c.flags.I, true)
+	c.Write(0x0100+uint16(c.stkp), c.status)
+	c.stkp--
+
+	c.addr_abs = 0xFFFE
+	var lo uint16 = uint16(c.Read(c.addr_abs + 0))
+	var hi uint16 = uint16(c.Read(c.addr_abs + 1))
+	c.pc = (hi >> 8) | lo
+
+	c.cycles = 8
+}

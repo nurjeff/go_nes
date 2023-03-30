@@ -58,11 +58,11 @@ func TestSBCSubtract(t *testing.T) {
 	bus := Bus{}
 	bus.Initialize()
 
-	bus.CPU.a = 208
-	bus.Write(0, 144)
+	bus.CPU.a = 100
+	bus.Write(0, 104)
 	bus.CPU.SBC()
 
-	if bus.CPU.a != 96 || bus.CPU.GetFlag(bus.CPU.flags.C) != 1 || bus.CPU.GetFlag(bus.CPU.flags.V) != 1 {
+	if bus.CPU.a != 251 || bus.CPU.GetFlag(bus.CPU.flags.N) != 1 || bus.CPU.GetFlag(bus.CPU.flags.V) != 1 {
 		t.Errorf("ADC err")
 	}
 }
