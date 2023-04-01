@@ -61,8 +61,8 @@ func loadROM(path string, b *Bus) {
 	b.CPU.Reset()
 	b.CPU.pc = 0xC000
 
-	//n5002 14572
-	for n := 0; n < 6000; n++ {
+	// 15276 n5250
+	for n := 0; n < 0; n++ {
 		for {
 			b.CPU.Clock()
 			if b.CPU.cycles == 0 {

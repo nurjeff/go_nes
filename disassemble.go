@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"runtime"
 )
@@ -27,12 +26,6 @@ func (c *CPU6502) disassemble(start uint16, stop uint16) {
 
 		if getFunNameAddr(c.lookup[opcode].AddrMode) == "IMP" {
 			sInst += " {IMP}"
-			if c.lookup[opcode].name == "NOP" {
-				if line_addr < 0xC6DD {
-					log.Println("got nop op at", line_addr, hex(line_addr, 4))
-				}
-
-			}
 		} else if getFunNameAddr(c.lookup[opcode].AddrMode) == "IMM" {
 
 			value = c.Read(uint16(addr))

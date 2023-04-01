@@ -172,7 +172,7 @@ func (c *CPU6502) BVC() uint8 {
 }
 
 func (c *CPU6502) BVS() uint8 {
-	if c.GetFlag(c.flags.V) == 1 {
+	if c.GetFlag(c.flags.V) == 1 { // 1
 		c.cycles++
 		c.addr_abs = c.pc + c.addr_rel
 
@@ -244,7 +244,7 @@ func (c *CPU6502) DEC() uint8 {
 func (c *CPU6502) DEX() uint8 {
 	c.x--
 	c.SetFlag(c.flags.Z, c.x == 0x00)
-	c.SetFlag(c.flags.N, (c.x&0x80)>>7 >= 1)
+	c.SetFlag(c.flags.N, ((c.x&0x80)>>7) >= 1)
 	return 0x00
 }
 
@@ -275,7 +275,7 @@ func (c *CPU6502) INC() uint8 {
 func (c *CPU6502) INX() uint8 {
 	c.x++
 	c.SetFlag(c.flags.Z, c.x == 0x00)
-	c.SetFlag(c.flags.N, (c.x&0x80)>>7 >= 1)
+	c.SetFlag(c.flags.N, ((c.x&0x80)>>7) >= 1)
 	return 0x00
 }
 
@@ -374,7 +374,7 @@ func (c *CPU6502) PHA() uint8 {
 }
 
 func (c *CPU6502) PHP() uint8 {
-	c.Write(0x100+uint16(c.stkp), c.status|1<<4|1<<5)
+	c.Write(0x100+uint16(c.stkp), c.status|(1<<4)|(1<<5))
 	c.SetFlag(c.flags.B, false)
 	c.SetFlag(c.flags.U, false)
 	c.stkp--
@@ -427,7 +427,6 @@ func (c *CPU6502) ROR() uint8 {
 	return 0x00
 }
 
-// rti stkp 1 zu wenig
 func (c *CPU6502) RTI() uint8 {
 	c.stkp++
 	c.status = c.Read(0x0100 + uint16(c.stkp))
@@ -451,9 +450,6 @@ func (c *CPU6502) RTS() uint8 {
 	c.pc++
 	return 0x00
 }
-
-// got  11100100
-// need  10100100
 
 func (c *CPU6502) SBC() uint8 {
 	c.Fetch()

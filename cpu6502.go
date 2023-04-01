@@ -79,26 +79,24 @@ func (c *CPU6502) Clock() {
 		c.opcode = c.Read(c.pc)
 		addrname := runtime.FuncForPC(reflect.ValueOf(c.lookup[c.opcode].AddrMode).Pointer()).Name()
 		addrname = addrname[len(addrname)-6 : len(addrname)-3]
-		fmt.Printf(c.lookup[c.opcode].name, addrname, "PC: ", hex(c.pc, 4), c.opcode)
+		//fmt.Printf(c.lookup[c.opcode].name, addrname, "PC: ", hex(c.pc, 4), c.opcode)
 		//fmt.Printf("%x\n", c.pc)
 		c.pc++
 
 		c.cycles = c.lookup[c.opcode].cycles
 		addrCycle := c.lookup[c.opcode].AddrMode()
 		opCycle := c.lookup[c.opcode].OpCode()
-
-		if c.opcode == 4 || c.opcode == 68 || c.opcode == 100 || c.opcode == 12 || c.opcode == 124 || c.opcode == 20 || c.opcode == 52 || c.opcode == 84 || c.opcode == 116 || c.opcode == 212 || c.opcode == 244 || c.opcode == 218 || c.opcode == 28 || c.opcode == 60 || c.opcode == 92 || c.opcode == 220 || c.opcode == 252 {
+		/*if c.opcode == 4 || c.opcode == 68 || c.opcode == 100 || c.opcode == 12 || c.opcode == 124 || c.opcode == 20 || c.opcode == 52 || c.opcode == 84 || c.opcode == 116 || c.opcode == 212 || c.opcode == 244 || c.opcode == 218 || c.opcode == 28 || c.opcode == 60 || c.opcode == 92 || c.opcode == 220 || c.opcode == 252 {
+			fmt.Println(hex(c.opcode, 2), c.opcode)
 			c.pc++
-		}
-		if c.opcode == 12 || c.opcode == 28 || c.opcode == 60 || c.opcode == 92 || c.opcode == 124 || c.opcode == 220 || c.opcode == 252 {
+		}*/
+		/*if c.opcode == 12 || c.opcode == 28 || c.opcode == 60 || c.opcode == 92 || c.opcode == 124 || c.opcode == 220 || c.opcode == 252 {
 			c.pc++
-		}
-		if c.opcode == 28 || c.opcode == 60 || c.opcode == 92 || c.opcode == 124 || c.opcode == 220 || c.opcode == 252 {
+		}*/
+		/*if c.opcode == 28 || c.opcode == 60 || c.opcode == 92 || c.opcode == 124 || c.opcode == 220 || c.opcode == 252 {
 			fmt.Println("extra cycle")
 			c.cycles++
-		}
-
-		fmt.Println("cycles:", c.cycles)
+		}*/
 		c.cycles += (addrCycle & opCycle)
 
 		c.SetFlag(c.flags.U, true)

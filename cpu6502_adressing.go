@@ -3,9 +3,6 @@ package main
 // Implement Adressing Modes
 func (c *CPU6502) IMP() uint8 {
 	c.fetched = c.a
-	if c.lookup[c.opcode].name == "NOP" {
-		return 1
-	}
 	return 0
 }
 
@@ -125,4 +122,15 @@ func (c *CPU6502) IZY() uint8 {
 		return 1
 	}
 	return 0
+}
+
+func (c *CPU6502) NOPX() uint8 {
+	var ptr_lo uint16 = uint16(c.Read(c.pc))
+	c.pc++
+	var ptr_hi uint16 = uint16(c.Read(c.pc))
+	c.pc++
+
+	_ = ptr_lo
+	_ = ptr_hi
+	return 1
 }

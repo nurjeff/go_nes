@@ -126,13 +126,33 @@ func (c *SDLController) Start() {
 				c.Running = false
 			case *sdl.KeyboardEvent:
 				if t.State == sdl.RELEASED {
+					if t.Keysym.Sym == sdl.K_v {
+						for i := 0; i < 100; i++ {
+							for {
+								c.Bus.CPU.Clock()
+								if c.Bus.RAM[0x2] > 0 {
+									fmt.Println("ERR:", c.Bus.RAM[0x2])
+								}
+								if c.Bus.CPU.cycles == 0 {
+
+									break
+								}
+							}
+						}
+
+					}
 					if t.Keysym.Sym == sdl.K_SPACE {
 						for {
 							c.Bus.CPU.Clock()
+							if c.Bus.RAM[0x2] > 0 {
+								fmt.Println("ERR:", c.Bus.RAM[0x2])
+							}
 							if c.Bus.CPU.cycles == 0 {
+
 								break
 							}
 						}
+
 					}
 				}
 			}
@@ -152,7 +172,7 @@ func (c *SDLController) DrawRAMPage0() {
 		if c.Bus.RAM[index] > 0 {
 			col = YELLOW
 		}
-		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, fmt.Sprint(c.Bus.RAM[index]), FONT_15, col)
+		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, hex(c.Bus.RAM[index], 2), FONT_15, col)
 		if ((index + 1) % 27) == 0 {
 			brk++
 		}
@@ -169,7 +189,7 @@ func (c *SDLController) DrawRAMPage8000() {
 		if c.Bus.RAM[index+32768] > 0 {
 			col = YELLOW
 		}
-		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, fmt.Sprint(c.Bus.RAM[index+32768]), FONT_15, col)
+		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, hex(c.Bus.RAM[index+32768], 2), FONT_15, col)
 		if ((index + 1) % 27) == 0 {
 			brk++
 		}
