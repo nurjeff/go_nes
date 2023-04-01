@@ -8,20 +8,141 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
+	"time"
+
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/ttf"
 )
 
 func main() {
 	bus := Bus{}
 	bus.Initialize()
 
-	runAssembly()
+	//runAllOpTests("./tests/")
+
+	sdlController := SDLController{Bus: &bus}
+	go runAssembly(&sdlController, &bus)
+
+	if err := sdlController.Initialize(1100, 750, "determination"); err != nil {
+		panic(err)
+	}
+
 	return
-	runAllOpTests("./tests/")
+
 }
 
-func runAssembly() {
-	bus := Bus{}
-	bus.Initialize()
+func run() (err error) {
+	var window *sdl.Window
+	var font *ttf.Font
+	var surface *sdl.Surface
+	var text *sdl.Surface
+
+	if err = ttf.Init(); err != nil {
+		return
+	}
+	defer ttf.Quit()
+
+	if err = sdl.Init(sdl.INIT_VIDEO); err != nil {
+		return
+	}
+	defer sdl.Quit()
+
+	// Create a window for us to draw the text on
+	if window, err = sdl.CreateWindow("Drawing text", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 800, 600, sdl.WINDOW_SHOWN); err != nil {
+		return
+	}
+	defer window.Destroy()
+
+	if surface, err = window.GetSurface(); err != nil {
+		return
+	}
+
+	// Load the font for our text
+	if font, err = ttf.OpenFont("./pixel.ttf", 48); err != nil {
+		return
+	}
+	defer font.Close()
+
+	// Create a red text with the font
+	if text, err = font.RenderUTF8Blended("Hello, World!", sdl.Color{R: 255, G: 0, B: 0, A: 255}); err != nil {
+		return
+	}
+	defer text.Free()
+
+	// Draw the text around the center of the window
+	if err = text.Blit(nil, surface, &sdl.Rect{X: 400 - (text.W / 2), Y: 300 - (text.H / 2), W: 0, H: 0}); err != nil {
+		return
+	}
+
+	// Update the window surface with what we have drawn
+	window.UpdateSurface()
+
+	// Run infinite loop until user closes the window
+	running := true
+	for running {
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.(type) {
+			case *sdl.QuitEvent:
+				running = false
+			}
+		}
+
+		sdl.Delay(16)
+	}
+
+	return
+}
+
+func initSDL() {
+	sdl.Init(sdl.INIT_EVERYTHING)
+	defer sdl.Quit()
+
+	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+		800, 600, sdl.WINDOW_SHOWN)
+	if err != nil {
+		panic(err)
+	}
+	defer window.Destroy()
+
+	surface, err := window.GetSurface()
+	if err != nil {
+		panic(err)
+	}
+	surface.FillRect(nil, 0)
+
+	rect := sdl.Rect{X: 0, Y: 0, W: 200, H: 200}
+	surface.FillRect(&rect, 0xffff0000)
+	window.UpdateSurface()
+
+	running := true
+	for running {
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.(type) {
+			case *sdl.QuitEvent:
+				running = false
+
+			}
+		}
+	}
+}
+
+func disassemble(mem []uint8, bus *Bus) {
+	for i := 0; i < len(mem); i++ {
+		b := mem[i]
+		ins := bus.CPU.lookup[b]
+		addrname := runtime.FuncForPC(reflect.ValueOf(bus.CPU.lookup[b].AddrMode).Pointer()).Name()
+
+		if ins.name != "BRK" {
+			fmt.Println(ins.name, addrname)
+		}
+
+	}
+}
+
+func runAssembly(con *SDLController, bus *Bus) {
+
+	time.Sleep(time.Second)
+	fmt.Println("loading..")
 
 	hex := []string{"A2", "0A", "8E", "00", "00", "A2", "03", "8E", "01", "00", "AC", "00", "00", "A9", "00", "18", "6D", "01", "00", "88", "D0", "FA", "8D", "02", "00", "EA", "EA", "EA"}
 	offset := 0
@@ -30,6 +151,8 @@ func runAssembly() {
 		bus.RAM[0x8000+offset] = uint8(value)
 		offset++
 	}
+
+	disassemble(bus.RAM[0x8000:], bus)
 
 	fmt.Println(bus.RAM[0x8000 : len(hex)+0x8000])
 	bus.RAM[0xFFFC] = 0x00
@@ -41,15 +164,15 @@ func runAssembly() {
 	fmt.Println(bus.CPU.pc, bus.RAM[bus.CPU.pc])
 	fmt.Println()
 
-	for n := 0; n < 50; n++ {
+	for n := 0; n < 40; n++ {
 		for {
 			bus.CPU.Clock()
+			con.Refresh()
 			if bus.CPU.cycles == 0 {
-				bus.CPU.PrintRegisters()
-				fmt.Println("----")
-				fmt.Println()
 				break
 			}
+			time.Sleep(time.Millisecond * 100)
+
 		}
 
 	}
