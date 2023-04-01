@@ -13,6 +13,9 @@ func (b *Bus) Initialize() {
 		b.RAM[i] = 0x00
 	}
 
+	b.RAM[0xFFFC] = 0x00
+	b.RAM[0xFFFD] = 0x80
+
 	// Create CPU with reference to this bus
 	b.CPU = CPU6502{Bus: b}
 	b.CPU.Initialize()

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 	"reflect"
@@ -20,15 +22,54 @@ func main() {
 
 	//runAllOpTests("./tests/")
 
-	sdlController := SDLController{Bus: &bus}
-	go runAssembly(&sdlController, &bus)
+	//fmt.Println(getFunNameAddr(bus.CPU.lookup[100].AddrMode))
+	//return
 
-	if err := sdlController.Initialize(1100, 750, "determination"); err != nil {
+	sdlController := SDLController{Bus: &bus}
+	go loadROM("./nt.nes", &bus)
+	//go runAssembly(&sdlController, &bus)
+
+	if err := sdlController.Initialize(1100, 750, "cmgc"); err != nil {
 		panic(err)
 	}
+}
 
-	return
+func loadROM(path string, b *Bus) {
+	f, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	reader := bufio.NewReader(f)
+	buf := make([]byte, 1000000)
+	for {
+		_, err := reader.Read(buf)
 
+		if err != nil {
+			if err != io.EOF {
+				fmt.Println(err)
+			}
+			break
+		}
+	}
+
+	for i := 0; i < 0x4000; i++ {
+		b.RAM[0x8000+i] = buf[0x0010+i]
+		b.RAM[0xC000+i] = buf[0x0010+i]
+	}
+	b.CPU.disassemble(0x0000, 0xFFFF)
+	b.CPU.Reset()
+	b.CPU.pc = 0xC000
+
+	//n5002 14572
+	for n := 0; n < 6000; n++ {
+		for {
+			b.CPU.Clock()
+			if b.CPU.cycles == 0 {
+				break
+			}
+		}
+	}
 }
 
 func run() (err error) {
@@ -126,24 +167,8 @@ func initSDL() {
 	}
 }
 
-func disassemble(mem []uint8, bus *Bus) {
-	for i := 0; i < len(mem); i++ {
-		b := mem[i]
-		ins := bus.CPU.lookup[b]
-		addrname := runtime.FuncForPC(reflect.ValueOf(bus.CPU.lookup[b].AddrMode).Pointer()).Name()
-
-		if ins.name != "BRK" {
-			fmt.Println(ins.name, addrname)
-		}
-
-	}
-}
-
 func runAssembly(con *SDLController, bus *Bus) {
-
 	time.Sleep(time.Second)
-	fmt.Println("loading..")
-
 	hex := []string{"A2", "0A", "8E", "00", "00", "A2", "03", "8E", "01", "00", "AC", "00", "00", "A9", "00", "18", "6D", "01", "00", "88", "D0", "FA", "8D", "02", "00", "EA", "EA", "EA"}
 	offset := 0
 	for _, h := range hex {
@@ -152,35 +177,31 @@ func runAssembly(con *SDLController, bus *Bus) {
 		offset++
 	}
 
-	disassemble(bus.RAM[0x8000:], bus)
+	bus.CPU.disassemble(0x0000, 0xFFFF)
+	bus.CPU.Reset()
 
-	fmt.Println(bus.RAM[0x8000 : len(hex)+0x8000])
 	bus.RAM[0xFFFC] = 0x00
 	bus.RAM[0xFFFD] = 0x80
-
-	bus.CPU.Reset()
 
 	fmt.Println("Start PC, RAM[PC]")
 	fmt.Println(bus.CPU.pc, bus.RAM[bus.CPU.pc])
 	fmt.Println()
 
-	for n := 0; n < 40; n++ {
+	for n := 0; n < 120; n++ {
 		for {
 			bus.CPU.Clock()
-			con.Refresh()
 			if bus.CPU.cycles == 0 {
 				break
 			}
 			time.Sleep(time.Millisecond * 100)
 
 		}
-
 	}
 
-	bus.CPU.PrintRegisters()
+	/*bus.CPU.PrintRegisters()
 	for i := 0; i < 10; i++ {
 		fmt.Println(bus.RAM[i])
-	}
+	}*/
 
 }
 

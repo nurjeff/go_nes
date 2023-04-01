@@ -3,6 +3,9 @@ package main
 // Implement Adressing Modes
 func (c *CPU6502) IMP() uint8 {
 	c.fetched = c.a
+	if c.lookup[c.opcode].name == "NOP" {
+		return 1
+	}
 	return 0
 }
 
