@@ -1,10 +1,12 @@
-package main
+package window
 
 import (
 	"errors"
 	"fmt"
 	"math/rand"
 
+	"github.com/sc-js/go_nes/bus"
+	t "github.com/sc-js/go_nes/emutools"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -16,7 +18,7 @@ type SDLController struct {
 	ResY    uint
 	Fonts   map[int]*ttf.Font
 	Running bool
-	Bus     *Bus
+	Bus     *bus.Bus
 	Rand    int
 }
 
@@ -133,7 +135,7 @@ func (c *SDLController) Start() {
 								if c.Bus.RAM[0x2] > 0 {
 									fmt.Println("ERR:", c.Bus.RAM[0x2])
 								}
-								if c.Bus.CPU.cycles == 0 {
+								if c.Bus.CPU.GetCycles() == 0 {
 
 									break
 								}
@@ -147,7 +149,7 @@ func (c *SDLController) Start() {
 							if c.Bus.RAM[0x2] > 0 {
 								fmt.Println("ERR:", c.Bus.RAM[0x2])
 							}
-							if c.Bus.CPU.cycles == 0 {
+							if c.Bus.CPU.GetCycles() == 0 {
 
 								break
 							}
@@ -172,7 +174,7 @@ func (c *SDLController) DrawRAMPage0() {
 		if c.Bus.RAM[index] > 0 {
 			col = YELLOW
 		}
-		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, hex(c.Bus.RAM[index], 2), FONT_15, col)
+		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, t.Hex(c.Bus.RAM[index], 2), FONT_15, col)
 		if ((index + 1) % 27) == 0 {
 			brk++
 		}
@@ -189,7 +191,7 @@ func (c *SDLController) DrawRAMPage8000() {
 		if c.Bus.RAM[index+32768] > 0 {
 			col = YELLOW
 		}
-		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, hex(c.Bus.RAM[index+32768], 2), FONT_15, col)
+		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, t.Hex(c.Bus.RAM[index+32768], 2), FONT_15, col)
 		if ((index + 1) % 27) == 0 {
 			brk++
 		}
@@ -203,57 +205,57 @@ func (c *SDLController) DrawCPUFlags() {
 
 	c.DrawText(uint(c.Surface.W)-xoff, 17, "CPU", FONT_20, WHITE)
 	c.DrawText(uint(c.Surface.W)-xoff, offset, "------", FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 17+offset, fmt.Sprint("A:    ", hex(c.Bus.CPU.a, 2)), FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 34+offset, fmt.Sprint("X:    ", hex(c.Bus.CPU.x, 2)), FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 51+offset, fmt.Sprint("Y:    ", hex(c.Bus.CPU.y, 2)), FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 68+offset, fmt.Sprint("S:    ", hex(c.Bus.CPU.stkp, 2)), FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 85+offset, fmt.Sprint("P:    ", hex(c.Bus.CPU.status, 2)), FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 102+offset, fmt.Sprintf("PC:  0x%x", c.Bus.CPU.pc), FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 119+offset, fmt.Sprint("TC:  ", c.Bus.CPU.totalCycles), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 17+offset, fmt.Sprint("A:    ", t.Hex(c.Bus.CPU.A(), 2)), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 34+offset, fmt.Sprint("X:    ", t.Hex(c.Bus.CPU.X(), 2)), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 51+offset, fmt.Sprint("Y:    ", t.Hex(c.Bus.CPU.Y(), 2)), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 68+offset, fmt.Sprint("S:    ", t.Hex(c.Bus.CPU.SP(), 2)), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 85+offset, fmt.Sprint("P:    ", t.Hex(c.Bus.CPU.P(), 2)), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 102+offset, fmt.Sprint("PC:  ", t.Hex(c.Bus.CPU.PC(), 4)), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 119+offset, fmt.Sprint("TC:  ", c.Bus.CPU.TC()), FONT_20, WHITE)
 
-	if c.Bus.CPU.GetFlag(c.Bus.CPU.flags.B) == 0 {
+	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.B) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 17, "B", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 17, "B", FONT_20, GREEN)
 	}
 
-	if c.Bus.CPU.GetFlag(c.Bus.CPU.flags.C) == 0 {
+	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.C) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 34, "C", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 34, "C", FONT_20, GREEN)
 	}
 
-	if c.Bus.CPU.GetFlag(c.Bus.CPU.flags.D) == 0 {
+	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.D) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 51, "D", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 51, "D", FONT_20, GREEN)
 	}
 
-	if c.Bus.CPU.GetFlag(c.Bus.CPU.flags.I) == 0 {
+	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.I) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 68, "I", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 68, "I", FONT_20, GREEN)
 	}
 
-	if c.Bus.CPU.GetFlag(c.Bus.CPU.flags.N) == 0 {
+	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.N) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 85, "N", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 85, "N", FONT_20, GREEN)
 	}
 
-	if c.Bus.CPU.GetFlag(c.Bus.CPU.flags.U) == 0 {
+	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.U) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 102, "U", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 102, "U", FONT_20, GREEN)
 	}
 
-	if c.Bus.CPU.GetFlag(c.Bus.CPU.flags.V) == 0 {
+	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.V) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 119, "V", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 119, "V", FONT_20, GREEN)
 	}
 
-	if c.Bus.CPU.GetFlag(c.Bus.CPU.flags.Z) == 0 {
+	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.Z) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 136, "Z", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 136, "Z", FONT_20, GREEN)
@@ -267,14 +269,14 @@ func (c *SDLController) DrawDisassembly() {
 		nextInst := ""
 		o := 0
 		for len(nextInst) == 0 {
-			nextInst = c.Bus.CPU.Disassembly[c.Bus.CPU.pc+uint16(i+o)]
+			nextInst = c.Bus.CPU.Disassembly[c.Bus.CPU.PC()+uint16(i+o)]
 			o++
 		}
 		co := WHITE
-		if uint16(i+0)+c.Bus.CPU.pc == c.Bus.CPU.pc {
+		if uint16(i+0)+c.Bus.CPU.PC() == c.Bus.CPU.PC() {
 			co = GREEN
 		}
-		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-350)+(uint(i)*20), c.Bus.CPU.Disassembly[c.Bus.CPU.pc+uint16(i)], FONT_15, co)
+		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-350)+(uint(i)*20), c.Bus.CPU.Disassembly[c.Bus.CPU.PC()+uint16(i)], FONT_15, co)
 	}
 
 	_ = offset

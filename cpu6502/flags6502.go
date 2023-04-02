@@ -1,4 +1,4 @@
-package main
+package cpu6502
 
 type FLAGS6502 struct {
 	C uint8 // Carry bit

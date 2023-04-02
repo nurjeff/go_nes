@@ -1,4 +1,4 @@
-package main
+package cpu6502
 
 type Instruction struct {
 	index    int

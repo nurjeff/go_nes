@@ -1,9 +1,13 @@
-package main
+package bus
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/sc-js/go_nes/cpu6502"
+)
 
 type Bus struct {
-	CPU CPU6502
+	CPU cpu6502.CPU6502
 	RAM [64 * 1024]uint8
 }
 
@@ -17,7 +21,7 @@ func (b *Bus) Initialize() {
 	b.RAM[0xFFFD] = 0x80
 
 	// Create CPU with reference to this bus
-	b.CPU = CPU6502{Bus: b}
+	b.CPU = cpu6502.CPU6502{ReadBus: b.Read, WriteBus: b.Write}
 	b.CPU.Initialize()
 	b.CPU.Reset()
 }

@@ -1,4 +1,4 @@
-package main
+package cpu6502
 
 import (
 	"reflect"
@@ -6,8 +6,11 @@ import (
 )
 
 type CPU6502 struct {
-	Bus   *Bus      // Bus connection pointer
-	flags FLAGS6502 // 6502 Flags
+	//Bus   *Bus      // Bus connection pointer
+	Flags FLAGS6502 // 6502 Flags
+
+	ReadBus  func(uint16, bool) uint8
+	WriteBus func(uint16, uint8)
 
 	// Registers
 	status uint8  // Status
@@ -42,10 +45,14 @@ type CPU6502 struct {
 	Disassembly map[uint16]string
 }
 
+func (c *CPU6502) GetCycles() uint8 {
+	return c.cycles
+}
+
 // Setup the CPU
 func (c *CPU6502) Initialize() {
-	c.flags = FLAGS6502{}
-	c.flags.Initialize()
+	c.Flags = FLAGS6502{}
+	c.Flags.Initialize()
 	c.InitInternals()
 }
 
@@ -71,17 +78,17 @@ func (c *CPU6502) InitInternals() {
 
 // Read from the bus
 func (c *CPU6502) Read(addr uint16) uint8 {
-	return c.Bus.Read(addr, false)
+	return c.ReadBus(addr, false)
 }
 
 // Write to the bus
 func (c *CPU6502) Write(addr uint16, data uint8) {
-	c.Bus.Write(addr, data)
+	c.WriteBus(addr, data)
 }
 
 func (c *CPU6502) Clock() {
 	if c.cycles == 0 {
-		c.opcode = c.Read(c.pc)
+		c.opcode = c.ReadBus(c.pc, false)
 		c.pc++
 
 		c.cycles = c.lookup[c.opcode].cycles
@@ -90,7 +97,7 @@ func (c *CPU6502) Clock() {
 
 		c.cycles += (addrCycle & opCycle)
 
-		c.SetFlag(c.flags.U, true)
+		c.SetFlag(c.Flags.U, true)
 		c.totalInstructions++
 	}
 	c.cycles--
@@ -99,7 +106,7 @@ func (c *CPU6502) Clock() {
 
 func (c *CPU6502) Fetch() uint8 {
 	if runtime.FuncForPC(reflect.ValueOf(c.lookup[c.opcode].AddrMode).Pointer()).Name() != runtime.FuncForPC(reflect.ValueOf(c.IMP).Pointer()).Name() {
-		c.fetched = c.Read(c.addr_abs)
+		c.fetched = c.ReadBus(c.addr_abs, false)
 	}
 	return c.fetched
 }
@@ -121,7 +128,7 @@ func (c *CPU6502) SetFlag(f uint8, v bool) {
 }
 
 func (c *CPU6502) Reset() {
-	c.SetFlag(c.flags.I, true)
+	c.SetFlag(c.Flags.I, true)
 	c.a = 0
 	c.x = 0
 	c.y = 0
@@ -138,4 +145,40 @@ func (c *CPU6502) Reset() {
 	c.fetched = 0x00
 
 	c.cycles = 7
+}
+
+func (c *CPU6502) A() uint8 {
+	return c.a
+}
+
+func (c *CPU6502) X() uint8 {
+	return c.x
+}
+
+func (c *CPU6502) Y() uint8 {
+	return c.y
+}
+
+func (c *CPU6502) P() uint8 {
+	return c.status
+}
+
+func (c *CPU6502) SP() uint8 {
+	return c.stkp
+}
+
+func (c *CPU6502) PC() uint16 {
+	return c.pc
+}
+
+func (c *CPU6502) TC() uint64 {
+	return c.totalCycles
+}
+
+func (c *CPU6502) SetPC(pc uint16) {
+	c.pc = pc
+}
+
+func (c *CPU6502) GetOP() Instruction {
+	return c.lookup[c.pc]
 }

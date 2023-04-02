@@ -1,4 +1,4 @@
-package main
+package cpu6502
 
 // Implement Adressing Modes
 func (c *CPU6502) IMP() uint8 {
