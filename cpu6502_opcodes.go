@@ -232,6 +232,36 @@ func (c *CPU6502) CPY() uint8 {
 	return 0x00
 }
 
+func (c *CPU6502) ISC() uint8 {
+	c.INC()
+	c.SBC()
+	return 0
+}
+
+func (c *CPU6502) SLO() uint8 {
+	c.ASL()
+	c.ORA()
+	return 0
+}
+
+func (c *CPU6502) RLA() uint8 {
+	c.ROL()
+	c.AND()
+	return 0
+}
+
+func (c *CPU6502) SRE() uint8 {
+	c.LSR()
+	c.EOR()
+	return 0
+}
+
+func (c *CPU6502) RRA() uint8 {
+	c.ROR()
+	c.ADC()
+	return 0
+}
+
 func (c *CPU6502) DEC() uint8 {
 	c.Fetch()
 	c.tmp = uint16(c.fetched) - 1
@@ -316,6 +346,21 @@ func (c *CPU6502) LDX() uint8 {
 	c.SetFlag(c.flags.Z, c.x == 0x00)
 	c.SetFlag(c.flags.N, (c.x&0x80)>>7 >= 1)
 	return 1
+}
+
+func (c *CPU6502) LAX() uint8 {
+	c.Fetch()
+	c.x = c.fetched
+	c.a = c.fetched
+	c.SetFlag(c.flags.Z, c.x == 0x00)
+	c.SetFlag(c.flags.N, (c.x&0x80)>>7 >= 1)
+	return 1
+}
+
+func (c *CPU6502) DCP() uint8 {
+	c.DEC()
+	c.CMP()
+	return 0
 }
 
 func (c *CPU6502) LDY() uint8 {
@@ -497,6 +542,11 @@ func (c *CPU6502) SED() uint8 {
 
 func (c *CPU6502) SEI() uint8 {
 	c.SetFlag(c.flags.I, true)
+	return 0x00
+}
+
+func (c *CPU6502) SAX() uint8 {
+	c.Write(c.addr_abs, c.a&c.x)
 	return 0x00
 }
 
