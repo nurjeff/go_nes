@@ -110,7 +110,7 @@ func (c *SDLController) Refresh() {
 
 	c.DrawCPUFlags()
 	c.DrawRAMPage0()
-	c.DrawRAMPage8000()
+	//c.DrawRAMPage8000()
 	c.DrawDisassembly()
 	c.Window.UpdateSurface()
 }
@@ -132,8 +132,8 @@ func (c *SDLController) Start() {
 						for i := 0; i < 100; i++ {
 							for {
 								c.Bus.CPU.Clock()
-								if c.Bus.RAM[0x2] > 0 {
-									fmt.Println("ERR:", c.Bus.RAM[0x2])
+								if c.Bus.CPURAM[0x2] > 0 {
+									fmt.Println("ERR:", c.Bus.CPURAM[0x2])
 								}
 								if c.Bus.CPU.GetCycles() == 0 {
 
@@ -146,8 +146,8 @@ func (c *SDLController) Start() {
 					if t.Keysym.Sym == sdl.K_SPACE {
 						for {
 							c.Bus.CPU.Clock()
-							if c.Bus.RAM[0x2] > 0 {
-								fmt.Println("ERR:", c.Bus.RAM[0x2])
+							if c.Bus.CPURAM[0x2] > 0 {
+								fmt.Println("ERR:", c.Bus.CPURAM[0x2])
 							}
 							if c.Bus.CPU.GetCycles() == 0 {
 
@@ -169,12 +169,12 @@ func (c *SDLController) DrawRAMPage0() {
 	c.DrawText(30, 17, "RAM - 0x0000 : 0x0100", FONT_20, WHITE)
 	c.DrawText(30, offset, "------", FONT_20, WHITE)
 	brk := 0
-	for index := range c.Bus.RAM[:256] {
+	for index := range c.Bus.CPURAM[:256] {
 		col := WHITE
-		if c.Bus.RAM[index] > 0 {
+		if c.Bus.CPURAM[index] > 0 {
 			col = YELLOW
 		}
-		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, t.Hex(c.Bus.RAM[index], 2), FONT_15, col)
+		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, t.Hex(c.Bus.CPURAM[index], 2), FONT_15, col)
 		if ((index + 1) % 27) == 0 {
 			brk++
 		}
@@ -186,12 +186,12 @@ func (c *SDLController) DrawRAMPage8000() {
 	c.DrawText(30, offset-17, "RAM - 0x8000 : 0x8100", FONT_20, WHITE)
 	c.DrawText(30, offset, "------", FONT_20, WHITE)
 	brk := 0
-	for index := range c.Bus.RAM[32768:33024] {
+	for index := range c.Bus.CPURAM[32768&0x07FF : 33024&0x07FF] {
 		col := WHITE
-		if c.Bus.RAM[index+32768] > 0 {
+		if c.Bus.CPURAM[index+32768] > 0 {
 			col = YELLOW
 		}
-		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, t.Hex(c.Bus.RAM[index+32768], 2), FONT_15, col)
+		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, t.Hex(c.Bus.CPURAM[index+32768], 2), FONT_15, col)
 		if ((index + 1) % 27) == 0 {
 			brk++
 		}
@@ -210,8 +210,8 @@ func (c *SDLController) DrawCPUFlags() {
 	c.DrawText(uint(c.Surface.W)-xoff, 51+offset, fmt.Sprint("Y:    ", t.Hex(c.Bus.CPU.Y(), 2)), FONT_20, WHITE)
 	c.DrawText(uint(c.Surface.W)-xoff, 68+offset, fmt.Sprint("S:    ", t.Hex(c.Bus.CPU.SP(), 2)), FONT_20, WHITE)
 	c.DrawText(uint(c.Surface.W)-xoff, 85+offset, fmt.Sprint("P:    ", t.Hex(c.Bus.CPU.P(), 2)), FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 102+offset, fmt.Sprint("PC:  ", t.Hex(c.Bus.CPU.PC(), 4)), FONT_20, WHITE)
-	c.DrawText(uint(c.Surface.W)-xoff, 119+offset, fmt.Sprint("TC:  ", c.Bus.CPU.TC()), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 102+offset, fmt.Sprint("PC:   ", t.Hex(c.Bus.CPU.PC(), 4)), FONT_20, WHITE)
+	c.DrawText(uint(c.Surface.W)-xoff, 119+offset, fmt.Sprint("TC:   ", c.Bus.CPU.TC()), FONT_20, WHITE)
 
 	if c.Bus.CPU.GetFlag(c.Bus.CPU.Flags.B) == 0 {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 17, "B", FONT_20, RED)
@@ -276,6 +276,7 @@ func (c *SDLController) DrawDisassembly() {
 		if uint16(i+0)+c.Bus.CPU.PC() == c.Bus.CPU.PC() {
 			co = GREEN
 		}
+		fmt.Println(c.Bus.CPU.Disassembly[c.Bus.CPU.PC()+uint16(i)])
 		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-350)+(uint(i)*20), c.Bus.CPU.Disassembly[c.Bus.CPU.PC()+uint16(i)], FONT_15, co)
 	}
 

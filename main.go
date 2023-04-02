@@ -7,15 +7,21 @@ import (
 	"os"
 
 	"github.com/sc-js/go_nes/bus"
+	"github.com/sc-js/go_nes/cartridge"
 	"github.com/sc-js/go_nes/window"
 )
 
 func main() {
+
+	cartridge := cartridge.Cartridge{}
+	cartridge.Initialize("./nestest.nes")
+
 	bus := bus.Bus{}
+	bus.InsertCartidge(&cartridge)
 	bus.Initialize()
 
 	sdlController := window.SDLController{Bus: &bus}
-	go loadROM("./nt.nes", &bus)
+	//go loadROM("./nt.nes", &bus)
 
 	if err := sdlController.Initialize(1100, 750, "cmgc"); err != nil {
 		panic(err)
@@ -42,10 +48,10 @@ func loadROM(path string, b *bus.Bus) {
 	}
 
 	for i := 0; i < 0x4000; i++ {
-		b.RAM[0x8000+i] = buf[0x0010+i]
-		b.RAM[0xC000+i] = buf[0x0010+i]
+		b.CPURAM[0x8000+i] = buf[0x0010+i]
+		b.CPURAM[0xC000+i] = buf[0x0010+i]
 	}
-	b.CPU.Disassemble(0x0000, 0xFFFF)
+	b.CPU.Disassemble(0x8000, 0xFFFF)
 	b.CPU.Reset()
 	b.CPU.SetPC(0xC000)
 

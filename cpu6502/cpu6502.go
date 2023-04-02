@@ -1,8 +1,11 @@
 package cpu6502
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
+
+	"github.com/sc-js/go_nes/emutools"
 )
 
 type CPU6502 struct {
@@ -143,6 +146,8 @@ func (c *CPU6502) Reset() {
 	c.addr_rel = 0x0000
 	c.addr_abs = 0x0000
 	c.fetched = 0x00
+
+	fmt.Println("Starting CPU with PC:", emutools.Hex(c.pc, 4))
 
 	c.cycles = 7
 }

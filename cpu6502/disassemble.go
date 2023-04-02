@@ -82,11 +82,10 @@ func (c *CPU6502) Disassemble(start uint16, stop uint16) {
 		case "REL":
 			value = c.Read(uint16(addr))
 			addr++
-			sInst += "$ " + t.Hex(value, 2) + " [$" + t.Hex(addr+uint32(value), 4) + "] {REL}"
+			sInst += "$ " + t.Hex(int(value), 2) + " [$" + t.Hex(addr+uint32(value), 4) + "] {REL}"
 		default:
 			panic("unknown addressing mode: " + fname)
 		}
-
 		mapLines[line_addr] = sInst
 	}
 
