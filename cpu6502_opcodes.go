@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 )
@@ -235,6 +236,12 @@ func (c *CPU6502) CPY() uint8 {
 func (c *CPU6502) ISC() uint8 {
 	c.INC()
 	c.SBC()
+	return 0
+}
+
+func (c *CPU6502) ALR() uint8 {
+	c.AND()
+	c.LSR()
 	return 0
 }
 
@@ -605,7 +612,50 @@ func (c *CPU6502) TYA() uint8 {
 	return 0x00
 }
 
-// Illegal opcode
+// Not implemented opcodes
 func (c *CPU6502) XXX() uint8 {
+	fmt.Println("OpCode", hex(c.opcode, 2), "not implemented")
 	return 0x00
+}
+
+func (c *CPU6502) IRQ() {
+	if c.GetFlag(c.flags.I) == 0 {
+		c.Write(0x0100+uint16(c.stkp), uint8((c.pc>>8)&0x00FF))
+		c.stkp--
+		c.Write(0x0100+uint16(c.stkp), uint8(c.pc&0x00FF))
+		c.stkp--
+
+		c.SetFlag(c.flags.B, false)
+		c.SetFlag(c.flags.U, true)
+		c.SetFlag(c.flags.I, true)
+		c.Write(0x0100+uint16(c.stkp), c.status)
+		c.stkp--
+
+		c.addr_abs = 0xFFFE
+		var lo uint16 = uint16(c.Read(c.addr_abs + 0))
+		var hi uint16 = uint16(c.Read(c.addr_abs + 1))
+		c.pc = (hi >> 8) | lo
+
+		c.cycles = 7
+	}
+}
+
+func (c *CPU6502) NMI() {
+	c.Write(0x0100+uint16(c.stkp), uint8((c.pc>>8)&0x00FF))
+	c.stkp--
+	c.Write(0x0100+uint16(c.stkp), uint8(c.pc&0x00FF))
+	c.stkp--
+
+	c.SetFlag(c.flags.B, false)
+	c.SetFlag(c.flags.U, true)
+	c.SetFlag(c.flags.I, true)
+	c.Write(0x0100+uint16(c.stkp), c.status)
+	c.stkp--
+
+	c.addr_abs = 0xFFFE
+	var lo uint16 = uint16(c.Read(c.addr_abs + 0))
+	var hi uint16 = uint16(c.Read(c.addr_abs + 1))
+	c.pc = (hi >> 8) | lo
+
+	c.cycles = 8
 }

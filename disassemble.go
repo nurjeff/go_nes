@@ -107,7 +107,7 @@ func getFunName(f interface{}) string {
 }
 
 func getFunNameAddr(f interface{}) string {
-	n := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	n := getFunName(f)
 	n = n[len(n)-6 : len(n)-3]
 	return n
 }

@@ -87,7 +87,7 @@ func (l *Instructions) Fill(c *CPU6502) *Instructions {
 		Instruction{72, "PHA", c.PHA, c.IMP, 3},
 		Instruction{73, "EOR", c.EOR, c.IMM, 2},
 		Instruction{74, "LSR", c.LSR, c.IMP, 2},
-		Instruction{75, "???", c.XXX, c.IMP, 2},
+		Instruction{75, "ALR", c.ALR, c.IMM, 2},
 		Instruction{76, "JMP", c.JMP, c.ABS, 3},
 		Instruction{77, "EOR", c.EOR, c.ABS, 4},
 		Instruction{78, "LSR", c.LSR, c.ABS, 6},

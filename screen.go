@@ -167,7 +167,7 @@ func (c *SDLController) DrawRAMPage0() {
 	c.DrawText(30, 17, "RAM - 0x0000 : 0x0100", FONT_20, WHITE)
 	c.DrawText(30, offset, "------", FONT_20, WHITE)
 	brk := 0
-	for index, _ := range c.Bus.RAM[:256] {
+	for index := range c.Bus.RAM[:256] {
 		col := WHITE
 		if c.Bus.RAM[index] > 0 {
 			col = YELLOW
@@ -184,7 +184,7 @@ func (c *SDLController) DrawRAMPage8000() {
 	c.DrawText(30, offset-17, "RAM - 0x8000 : 0x8100", FONT_20, WHITE)
 	c.DrawText(30, offset, "------", FONT_20, WHITE)
 	brk := 0
-	for index, _ := range c.Bus.RAM[32768:33024] {
+	for index := range c.Bus.RAM[32768:33024] {
 		col := WHITE
 		if c.Bus.RAM[index+32768] > 0 {
 			col = YELLOW
