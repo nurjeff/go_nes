@@ -29,6 +29,7 @@ func (c *CPU6502) Disassemble(start uint16, stop uint16) {
 			sInst += " {IMP}"
 		case "IMM":
 			value = c.Read(uint16(addr))
+			addr++
 			sInst += "#$ " + t.Hex(value, 2) + " {IMM}"
 		case "ZP0":
 			lo = c.Read(uint16(addr))

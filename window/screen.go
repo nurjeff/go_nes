@@ -40,6 +40,7 @@ const (
 	RED    = 81
 	YELLOW = 82
 	GREEN  = 83
+	PURPLE = 84
 )
 
 func getColor(font int) sdl.Color {
@@ -52,6 +53,8 @@ func getColor(font int) sdl.Color {
 		return sdl.Color{R: 245, G: 215, B: 40, A: 255}
 	case GREEN:
 		return sdl.Color{R: 0, G: 255, B: 0, A: 255}
+	case PURPLE:
+		return sdl.Color{255, 30, 255, 255}
 	}
 	return sdl.Color{R: 255, G: 255, B: 255, A: 255}
 }
@@ -69,7 +72,7 @@ func (c *SDLController) Initialize(resx uint, resy uint, fontname string) error 
 	c.ResX = resx
 	c.ResY = resy
 
-	if window, err := sdl.CreateWindow("GO NES", sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, int32(resx), int32(resy), sdl.WINDOW_SHOWN|sdl.WINDOW_ALLOW_HIGHDPI); err != nil {
+	if window, err := sdl.CreateWindow("GO NES [CPU 6502 | PPU 2C02]", sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, int32(resx), int32(resy), sdl.WINDOW_SHOWN|sdl.WINDOW_ALLOW_HIGHDPI); err != nil {
 		return err
 	} else {
 		c.Window = window
@@ -110,7 +113,7 @@ func (c *SDLController) Refresh() {
 
 	c.DrawCPUFlags()
 	c.DrawRAMPage0()
-	//c.DrawRAMPage8000()
+	c.DrawRAMPage8000()
 	c.DrawDisassembly()
 	c.Window.UpdateSurface()
 }
@@ -183,19 +186,31 @@ func (c *SDLController) DrawRAMPage0() {
 
 func (c *SDLController) DrawRAMPage8000() {
 	var offset uint = 400
-	c.DrawText(30, offset-17, "RAM - 0x8000 : 0x8100", FONT_20, WHITE)
+	c.DrawText(30, offset-17, "RAM - 0x8000 : 0x8100 - [Mapped to cartridge ROM]", FONT_20, WHITE)
 	c.DrawText(30, offset, "------", FONT_20, WHITE)
 	brk := 0
-	for index := range c.Bus.CPURAM[32768&0x07FF : 33024&0x07FF] {
+
+	for i := 0; i < 256; i++ {
+		col := WHITE
+		dat := c.Bus.CPU.Read(32768 + uint16(i))
+		if dat > 0 {
+			col = YELLOW
+		}
+		c.DrawTextCentered(34+27*uint(i-brk*27), offset+17+uint(brk)*24, t.Hex(dat, 2), FONT_15, col)
+		if ((i + 1) % 27) == 0 {
+			brk++
+		}
+	}
+	/*for index := range c.Bus.CPURAM[32768&0x07FF : 33024&0x07FF] {
 		col := WHITE
 		if c.Bus.CPURAM[index+32768] > 0 {
 			col = YELLOW
 		}
-		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, t.Hex(c.Bus.CPURAM[index+32768], 2), FONT_15, col)
+		c.DrawTextCentered(34+27*uint(index-brk*27), offset+17+uint(brk)*24, t.Hex(c.Bus.CPURAM[(index+32768)&0x07FF], 2), FONT_15, col)
 		if ((index + 1) % 27) == 0 {
 			brk++
 		}
-	}
+	}*/
 }
 
 func (c *SDLController) DrawCPUFlags() {
@@ -263,25 +278,32 @@ func (c *SDLController) DrawCPUFlags() {
 }
 
 func (c *SDLController) DrawDisassembly() {
-	var offset uint = 240
 	var xoff uint = 280
-	for i := -10; i < 13; i++ {
+	padding := 16
+
+	c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H) - 300), c.Bus.CPU.Disassembly[c.Bus.CPU.PC()], FONT_15, PURPLE)
+
+	o := 1
+	for i := 0; i < 15; i++ {
 		nextInst := ""
-		o := 0
 		for len(nextInst) == 0 {
-			nextInst = c.Bus.CPU.Disassembly[c.Bus.CPU.PC()+uint16(i+o)]
+			nextInst = c.Bus.CPU.Disassembly[uint16(int(c.Bus.CPU.PC())+i+o)]
 			o++
 		}
-		co := WHITE
-		if uint16(i+0)+c.Bus.CPU.PC() == c.Bus.CPU.PC() {
-			co = GREEN
-		}
-		fmt.Println(c.Bus.CPU.Disassembly[c.Bus.CPU.PC()+uint16(i)])
-		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-350)+(uint(i)*20), c.Bus.CPU.Disassembly[c.Bus.CPU.PC()+uint16(i)], FONT_15, co)
+		o = 1
+		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-300)+uint(i*padding)+uint(padding), nextInst, FONT_15, WHITE)
 	}
 
-	_ = offset
-
+	o = 1
+	for i := 0; i < 15; i++ {
+		nextInst := ""
+		for len(nextInst) == 0 {
+			nextInst = c.Bus.CPU.Disassembly[uint16(int(c.Bus.CPU.PC())-i-o)]
+			o++
+		}
+		o = 1
+		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-300)-uint(i*padding)-uint(padding), nextInst, FONT_15, WHITE)
+	}
 }
 
 func (c *SDLController) DrawText(x uint, y uint, text string, size int, color int) error {
