@@ -14,7 +14,7 @@ import (
 func main() {
 
 	cartridge := cartridge.Cartridge{}
-	cartridge.Initialize("./nestest.nes")
+	cartridge.Initialize("./assets/burgertime.nes")
 
 	bus := bus.Bus{}
 	bus.InsertCartidge(&cartridge)

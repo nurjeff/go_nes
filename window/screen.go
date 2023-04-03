@@ -7,6 +7,7 @@ import (
 
 	"github.com/sc-js/go_nes/bus"
 	t "github.com/sc-js/go_nes/emutools"
+	ppu2c02 "github.com/sc-js/go_nes/ppu2C02"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -23,6 +24,8 @@ type SDLController struct {
 }
 
 var fonts []int = []int{FONT_12, FONT_13, FONT_14, FONT_15, FONT_18, FONT_20, FONT_24, FONT_32, FONT_38, FONT_42}
+
+const DRAW_GAME = true
 
 const (
 	FONT_12 = 12
@@ -43,6 +46,15 @@ const (
 	PURPLE = 84
 )
 
+func (c *SDLController) DrawDisplay(d *ppu2c02.Display, xoff int32) {
+	for x := 0; x < int(d.Width); x++ {
+		for y := 0; y < int(d.Height); y++ {
+			rect := sdl.Rect{X: int32(x) + xoff, Y: int32(y), W: 1, H: 1}
+			c.Surface.FillRect(&rect, sdl.MapRGBA(c.Surface.Format, d.Data[x][y].R, d.Data[x][y].G, d.Data[x][y].B, d.Data[x][y].A))
+		}
+	}
+}
+
 func getColor(font int) sdl.Color {
 	switch font {
 	case WHITE:
@@ -54,7 +66,7 @@ func getColor(font int) sdl.Color {
 	case GREEN:
 		return sdl.Color{R: 0, G: 255, B: 0, A: 255}
 	case PURPLE:
-		return sdl.Color{255, 30, 255, 255}
+		return sdl.Color{R: 255, G: 30, B: 255, A: 255}
 	}
 	return sdl.Color{R: 255, G: 255, B: 255, A: 255}
 }
@@ -112,8 +124,10 @@ func (c *SDLController) Refresh() {
 	c.Surface.FillRect(&rect, 0x1e2124)
 
 	c.DrawCPUFlags()
-	c.DrawRAMPage0()
-	c.DrawRAMPage8000()
+	c.DrawDisplay(c.Bus.PPU.GetPatternTable(1, 0), 0)
+	c.DrawDisplay(c.Bus.PPU.GetPatternTable(0, 0), 300)
+	//c.DrawRAMPage0()
+	//c.DrawRAMPage8000()
 	c.DrawDisassembly()
 	c.Window.UpdateSurface()
 }
@@ -132,31 +146,38 @@ func (c *SDLController) Start() {
 			case *sdl.KeyboardEvent:
 				if t.State == sdl.RELEASED {
 					if t.Keysym.Sym == sdl.K_v {
-						for i := 0; i < 100; i++ {
+						c.Bus.CPU.NMI()
+						/*for i := 0; i < 100; i++ {
 							for {
-								c.Bus.CPU.Clock()
-								if c.Bus.CPURAM[0x2] > 0 {
-									fmt.Println("ERR:", c.Bus.CPURAM[0x2])
-								}
+								c.Bus.Clock()
 								if c.Bus.CPU.GetCycles() == 0 {
-
 									break
 								}
 							}
-						}
-
+						}*/
 					}
 					if t.Keysym.Sym == sdl.K_SPACE {
+
 						for {
 							c.Bus.CPU.Clock()
-							if c.Bus.CPURAM[0x2] > 0 {
-								fmt.Println("ERR:", c.Bus.CPURAM[0x2])
-							}
 							if c.Bus.CPU.GetCycles() == 0 {
-
 								break
 							}
+
 						}
+						/*for {
+							c.Bus.Clock()
+							if c.Bus.PPU.FrameComplete {
+								c.Bus.PPU.FrameComplete = false
+								for {
+									if c.Bus.CPU.GetCycles() == 0 {
+										break
+									}
+									c.Bus.Clock()
+								}
+								break
+							}
+						}*/
 
 					}
 				}
@@ -281,28 +302,28 @@ func (c *SDLController) DrawDisassembly() {
 	var xoff uint = 280
 	padding := 16
 
-	c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H) - 300), c.Bus.CPU.Disassembly[c.Bus.CPU.PC()], FONT_15, PURPLE)
+	c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H) - 420), c.Bus.CPU.Disassembly[c.Bus.CPU.PC()], FONT_15, PURPLE)
 
 	o := 1
-	for i := 0; i < 15; i++ {
+	for i := 0; i < 8; i++ {
 		nextInst := ""
 		for len(nextInst) == 0 {
 			nextInst = c.Bus.CPU.Disassembly[uint16(int(c.Bus.CPU.PC())+i+o)]
 			o++
 		}
 		o = 1
-		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-300)+uint(i*padding)+uint(padding), nextInst, FONT_15, WHITE)
+		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-420)+uint(i*padding)+uint(padding), nextInst, FONT_15, WHITE)
 	}
 
 	o = 1
-	for i := 0; i < 15; i++ {
+	for i := 0; i < 8; i++ {
 		nextInst := ""
 		for len(nextInst) == 0 {
 			nextInst = c.Bus.CPU.Disassembly[uint16(int(c.Bus.CPU.PC())-i-o)]
 			o++
 		}
 		o = 1
-		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-300)-uint(i*padding)-uint(padding), nextInst, FONT_15, WHITE)
+		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-420)-uint(i*padding)-uint(padding), nextInst, FONT_15, WHITE)
 	}
 }
 

@@ -51,6 +51,7 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 		Unused:       string(data[10:HEADER_LENGTH]),
 	}
 	c.MapperID = ((c.Header.Mapper2 >> 4) << 4) | (c.Header.Mapper1 >> 4)
+	fmt.Println("MapperID:", c.MapperID)
 
 	trLenth := TRAINING_LENGTH
 

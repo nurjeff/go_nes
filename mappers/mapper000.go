@@ -37,7 +37,7 @@ func (m Mapper0) CPUMapWrite(addr uint16) (bool, uint32) {
 
 func (m Mapper0) PPUMapRead(addr uint16) (bool, uint32) {
 	mappedAddr := uint32(addr)
-	if addr >= 0x8000 && addr <= 0x1FFF {
+	if addr <= 0x1FFF {
 		return true, mappedAddr
 	}
 	return false, mappedAddr

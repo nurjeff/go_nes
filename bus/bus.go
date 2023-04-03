@@ -35,6 +35,7 @@ func (b *Bus) Initialize() {
 	b.CPU.Reset()
 
 	b.PPU = ppu2c02.PPUC202{Cartridge: b.Cartridge}
+	b.PPU.Initialize()
 }
 
 func (b *Bus) cpuWrite(addr uint16, data uint8) {

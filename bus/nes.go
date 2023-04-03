@@ -17,5 +17,10 @@ func (b *Bus) Clock() {
 	if b.SystemClockCounter%3 == 0 {
 		b.CPU.Clock()
 	}
+
+	if b.PPU.NMI {
+		b.PPU.NMI = false
+		b.CPU.NMI()
+	}
 	b.SystemClockCounter++
 }

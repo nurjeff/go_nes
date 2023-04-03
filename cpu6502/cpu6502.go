@@ -94,6 +94,8 @@ func (c *CPU6502) Clock() {
 		c.opcode = c.ReadBus(c.pc, false)
 		c.pc++
 
+		//fmt.Println(c.lookup[c.opcode].name)
+
 		c.cycles = c.lookup[c.opcode].cycles
 		addrCycle := c.lookup[c.opcode].AddrMode()
 		opCycle := c.lookup[c.opcode].OpCode()
@@ -150,8 +152,6 @@ func (c *CPU6502) Reset() {
 	fmt.Println("Starting CPU with PC:", emutools.Hex(c.pc, 4))
 
 	c.cycles = 7
-
-	c.pc = 0xC000
 }
 
 func (c *CPU6502) A() uint8 {

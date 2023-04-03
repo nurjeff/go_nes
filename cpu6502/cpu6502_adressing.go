@@ -36,7 +36,6 @@ func (c *CPU6502) ZPY() uint8 {
 func (c *CPU6502) REL() uint8 {
 	c.addr_rel = uint16(c.Read(c.pc))
 	c.pc++
-	// might bug out
 
 	if (c.addr_rel & 0x80 >> 7) == 1 {
 		c.addr_rel |= 0xFF00
