@@ -1,7 +1,6 @@
 package cpu6502
 
 import (
-	"fmt"
 	"reflect"
 	"runtime"
 
@@ -40,7 +39,7 @@ func (c *CPU6502) ASL() uint8 {
 	c.tmp = uint16(c.fetched) << 1
 	c.SetFlag(c.Flags.C, (c.tmp&0xFF00) > 0)
 	c.SetFlag(c.Flags.Z, (c.tmp&0x00FF) == 0)
-	c.SetFlag(c.Flags.N, (c.tmp&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.tmp&0x80)>>7) >= 1)
 	if runtime.FuncForPC(reflect.ValueOf(c.lookup[c.opcode].AddrMode).Pointer()).Name() == runtime.FuncForPC(reflect.ValueOf(c.IMP).Pointer()).Name() {
 		c.a = uint8(c.tmp & 0x00FF)
 	} else {
@@ -213,7 +212,7 @@ func (c *CPU6502) CMP() uint8 {
 	c.tmp = uint16(c.a) - uint16(c.fetched)
 	c.SetFlag(c.Flags.C, c.a >= c.fetched)
 	c.SetFlag(c.Flags.Z, (c.tmp&0x00FF) == 0x0000)
-	c.SetFlag(c.Flags.N, (c.tmp&0x0080)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.tmp&0x0080)>>7) >= 1)
 	return 1
 }
 
@@ -222,7 +221,7 @@ func (c *CPU6502) CPX() uint8 {
 	c.tmp = uint16(c.x) - uint16(c.fetched)
 	c.SetFlag(c.Flags.C, c.x >= c.fetched)
 	c.SetFlag(c.Flags.Z, (c.tmp&0x00FF) == 0x0000)
-	c.SetFlag(c.Flags.N, (c.tmp&0x0080)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.tmp&0x0080)>>7) >= 1)
 	return 0x00
 }
 
@@ -231,7 +230,7 @@ func (c *CPU6502) CPY() uint8 {
 	c.tmp = uint16(c.y) - uint16(c.fetched)
 	c.SetFlag(c.Flags.C, c.y >= c.fetched)
 	c.SetFlag(c.Flags.Z, (c.tmp&0x00FF) == 0x0000)
-	c.SetFlag(c.Flags.N, (c.tmp&0x0080)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.tmp&0x0080)>>7) >= 1)
 	return 0x00
 }
 
@@ -276,7 +275,7 @@ func (c *CPU6502) DEC() uint8 {
 	c.tmp = uint16(c.fetched) - 1
 	c.Write(c.addr_abs, uint8(c.tmp&0x00FF))
 	c.SetFlag(c.Flags.Z, (c.tmp&0x00FF) == 0x0000)
-	c.SetFlag(c.Flags.N, (c.tmp&0x0080)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.tmp&0x0080)>>7) >= 1)
 	return 0x00
 }
 
@@ -290,7 +289,7 @@ func (c *CPU6502) DEX() uint8 {
 func (c *CPU6502) DEY() uint8 {
 	c.y--
 	c.SetFlag(c.Flags.Z, c.y == 0x00)
-	c.SetFlag(c.Flags.N, (c.y&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.y&0x80)>>7) >= 1)
 	return 0x00
 }
 
@@ -298,7 +297,7 @@ func (c *CPU6502) EOR() uint8 {
 	c.Fetch()
 	c.a = c.a ^ c.fetched
 	c.SetFlag(c.Flags.Z, c.a == 0x00)
-	c.SetFlag(c.Flags.N, (c.a&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.a&0x80)>>7) >= 1)
 	return 0x00
 }
 
@@ -307,7 +306,7 @@ func (c *CPU6502) INC() uint8 {
 	c.tmp = uint16(c.fetched) + 1
 	c.Write(c.addr_abs, uint8(c.tmp&0x00FF))
 	c.SetFlag(c.Flags.Z, (c.tmp&0x00FF) == 0x0000)
-	c.SetFlag(c.Flags.N, (c.tmp&0x0080)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.tmp&0x0080)>>7) >= 1)
 	return 0x00
 }
 
@@ -321,7 +320,7 @@ func (c *CPU6502) INX() uint8 {
 func (c *CPU6502) INY() uint8 {
 	c.y++
 	c.SetFlag(c.Flags.Z, c.y == 0x00)
-	c.SetFlag(c.Flags.N, (c.y&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.y&0x80)>>7) >= 1)
 	return 0x00
 }
 
@@ -353,7 +352,7 @@ func (c *CPU6502) LDX() uint8 {
 	c.Fetch()
 	c.x = c.fetched
 	c.SetFlag(c.Flags.Z, c.x == 0x00)
-	c.SetFlag(c.Flags.N, (c.x&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.x&0x80)>>7) >= 1)
 	return 1
 }
 
@@ -362,7 +361,7 @@ func (c *CPU6502) LAX() uint8 {
 	c.x = c.fetched
 	c.a = c.fetched
 	c.SetFlag(c.Flags.Z, c.x == 0x00)
-	c.SetFlag(c.Flags.N, (c.x&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.x&0x80)>>7) >= 1)
 	return 1
 }
 
@@ -376,16 +375,16 @@ func (c *CPU6502) LDY() uint8 {
 	c.Fetch()
 	c.y = c.fetched
 	c.SetFlag(c.Flags.Z, c.y == 0x00)
-	c.SetFlag(c.Flags.N, (c.y&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.y&0x80)>>7) >= 1)
 	return 1
 }
 
 func (c *CPU6502) LSR() uint8 {
 	c.Fetch()
-	c.SetFlag(c.Flags.C, c.fetched&0x0001 >= 1)
+	c.SetFlag(c.Flags.C, (c.fetched&0x0001) >= 1)
 	c.tmp = uint16(c.fetched) >> 1
 	c.SetFlag(c.Flags.Z, (c.tmp&0x00FF) == 0x0000)
-	c.SetFlag(c.Flags.N, (c.tmp&0x0080)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.tmp&0x0080)>>7) >= 1)
 	if runtime.FuncForPC(reflect.ValueOf(c.lookup[c.opcode].AddrMode).Pointer()).Name() == runtime.FuncForPC(reflect.ValueOf(c.IMP).Pointer()).Name() {
 		c.a = uint8(c.tmp & 0x00FF)
 	} else {
@@ -417,7 +416,7 @@ func (c *CPU6502) ORA() uint8 {
 	c.Fetch()
 	c.a = c.a | c.fetched
 	c.SetFlag(c.Flags.Z, c.a == 0x00)
-	c.SetFlag(c.Flags.N, (c.a&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.a&0x80)>>7) >= 1)
 	return 0x00
 }
 
@@ -540,10 +539,6 @@ func (c *CPU6502) SEC() uint8 {
 	return 0x00
 }
 
-//need 10100101
-//got  11101101
-//wrong D, V
-
 func (c *CPU6502) SED() uint8 {
 	c.SetFlag(c.Flags.D, true)
 	return 0x00
@@ -577,28 +572,28 @@ func (c *CPU6502) STY() uint8 {
 func (c *CPU6502) TAX() uint8 {
 	c.x = c.a
 	c.SetFlag(c.Flags.Z, c.x == 0x00)
-	c.SetFlag(c.Flags.N, (c.x&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.x&0x80)>>7) >= 1)
 	return 0x00
 }
 
 func (c *CPU6502) TAY() uint8 {
 	c.y = c.a
 	c.SetFlag(c.Flags.Z, c.y == 0x00)
-	c.SetFlag(c.Flags.N, (c.y&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.y&0x80)>>7) >= 1)
 	return 0x00
 }
 
 func (c *CPU6502) TSX() uint8 {
 	c.x = c.stkp
 	c.SetFlag(c.Flags.Z, c.x == 0x00)
-	c.SetFlag(c.Flags.N, (c.x&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.x&0x80)>>7) >= 1)
 	return 0x00
 }
 
 func (c *CPU6502) TXA() uint8 {
 	c.a = c.x
 	c.SetFlag(c.Flags.Z, c.a == 0x00)
-	c.SetFlag(c.Flags.N, (c.a&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.a&0x80)>>7) >= 1)
 	return 0x00
 }
 
@@ -610,13 +605,13 @@ func (c *CPU6502) TXS() uint8 {
 func (c *CPU6502) TYA() uint8 {
 	c.a = c.y
 	c.SetFlag(c.Flags.Z, c.a == 0x00)
-	c.SetFlag(c.Flags.N, (c.a&0x80)>>7 >= 1)
+	c.SetFlag(c.Flags.N, ((c.a&0x80)>>7) >= 1)
 	return 0x00
 }
 
 // Not implemented opcodes
 func (c *CPU6502) XXX() uint8 {
-	fmt.Println("OpCode", emutools.Hex(c.opcode, 2), "not implemented")
+	//fmt.Println("OpCode", emutools.Hex(c.opcode, 2), "not implemented")
 	return 0x00
 }
 
@@ -636,7 +631,7 @@ func (c *CPU6502) IRQ() {
 		c.addr_abs = 0xFFFE
 		var lo uint16 = uint16(c.Read(c.addr_abs + 0))
 		var hi uint16 = uint16(c.Read(c.addr_abs + 1))
-		c.pc = (hi >> 8) | lo
+		c.pc = (hi << 8) | lo
 
 		c.cycles = 7
 	}
@@ -654,10 +649,10 @@ func (c *CPU6502) NMI() {
 	c.Write(0x0100+uint16(c.stkp), c.status)
 	c.stkp--
 
-	c.addr_abs = 0xFFFE
+	c.addr_abs = 0xFFFA
 	var lo uint16 = uint16(c.Read(c.addr_abs + 0))
 	var hi uint16 = uint16(c.Read(c.addr_abs + 1))
-	c.pc = (hi >> 8) | lo
+	c.pc = (hi << 8) | lo
 
 	c.cycles = 8
 }

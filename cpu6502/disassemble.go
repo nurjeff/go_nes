@@ -1,8 +1,6 @@
 package cpu6502
 
 import (
-	"fmt"
-
 	t "github.com/sc-js/go_nes/emutools"
 )
 
@@ -16,7 +14,7 @@ func (c *CPU6502) Disassemble(start uint16, stop uint16) {
 
 	var line_addr uint16 = 0
 
-	fmt.Println(c.opcode)
+	//fmt.Println(c.opcode)
 
 	for addr <= uint32(stop) {
 		line_addr = uint16(addr)

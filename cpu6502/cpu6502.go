@@ -1,11 +1,8 @@
 package cpu6502
 
 import (
-	"fmt"
 	"reflect"
 	"runtime"
-
-	"github.com/sc-js/go_nes/emutools"
 )
 
 type CPU6502 struct {
@@ -111,6 +108,7 @@ func (c *CPU6502) Clock() {
 
 func (c *CPU6502) Fetch() uint8 {
 	if runtime.FuncForPC(reflect.ValueOf(c.lookup[c.opcode].AddrMode).Pointer()).Name() != runtime.FuncForPC(reflect.ValueOf(c.IMP).Pointer()).Name() {
+		//fmt.Println("ADDR HERE:", emutools.Hex(c.addr_abs, 4))
 		c.fetched = c.ReadBus(c.addr_abs, false)
 	}
 	return c.fetched
@@ -133,12 +131,11 @@ func (c *CPU6502) SetFlag(f uint8, v bool) {
 }
 
 func (c *CPU6502) Reset() {
-	c.SetFlag(c.Flags.I, true)
 	c.a = 0
 	c.x = 0
 	c.y = 0
 	c.stkp = 0xFD
-	c.status = 0x00 | 0x04
+	c.status = 0x00 | (1 << 5)
 
 	c.addr_abs = 0xFFFC
 	var lo uint16 = uint16(c.Read(c.addr_abs + 0))
@@ -149,9 +146,7 @@ func (c *CPU6502) Reset() {
 	c.addr_abs = 0x0000
 	c.fetched = 0x00
 
-	fmt.Println("Starting CPU with PC:", emutools.Hex(c.pc, 4))
-
-	c.cycles = 7
+	c.cycles = 8
 }
 
 func (c *CPU6502) A() uint8 {

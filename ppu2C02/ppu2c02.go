@@ -66,18 +66,33 @@ func (p *PPUC202) GetPatternTable(i uint8, palette uint8) *Display {
 }
 
 const (
-	S_VBLANK_FLAG     = (1 << 0)
-	S_SPRITEZERO_HIT  = (1 << 1)
-	S_SPRITE_OVERFLOW = (1 << 2)
+	/*
+		S_VBLANK_FLAG     = (1 << 0)
+		S_SPRITEZERO_HIT  = (1 << 1)
+		S_SPRITE_OVERFLOW = (1 << 2)
 
-	C_ENABLE_MMI     = (1 << 0)
-	C_SLAVE_MODE     = (1 << 1)
-	C_SPRITE_SIZE    = (1 << 2)
-	C_PATTERN_BKG    = (1 << 3)
-	C_PATTERN_SPR    = (1 << 4)
-	C_INCREMENT_MODE = (1 << 5)
-	C_NAMETABLE_X    = (1 << 6)
-	C_NAMETABLE_Y    = (1 << 7)
+		C_ENABLE_MMI     = (1 << 0)
+		C_SLAVE_MODE     = (1 << 1)
+		C_SPRITE_SIZE    = (1 << 2)
+		C_PATTERN_BKG    = (1 << 3)
+		C_PATTERN_SPR    = (1 << 4)
+		C_INCREMENT_MODE = (1 << 5)
+		C_NAMETABLE_X    = (1 << 6)
+		C_NAMETABLE_Y    = (1 << 7)
+	*/
+
+	S_VBLANK_FLAG     = (1 << 7)
+	S_SPRITEZERO_HIT  = (1 << 6)
+	S_SPRITE_OVERFLOW = (1 << 5)
+
+	C_ENABLE_MMI     = (1 << 7)
+	C_SLAVE_MODE     = (1 << 6)
+	C_SPRITE_SIZE    = (1 << 5)
+	C_PATTERN_BKG    = (1 << 4)
+	C_PATTERN_SPR    = (1 << 3)
+	C_INCREMENT_MODE = (1 << 2)
+	C_NAMETABLE_X    = (1 << 1)
+	C_NAMETABLE_Y    = (1 << 0)
 )
 
 func (p *PPUC202) Initialize() {
@@ -87,9 +102,11 @@ func (p *PPUC202) Initialize() {
 	p.sprPatternTable[0] = Display{Width: 128, Height: 128}
 	p.sprPatternTable[1] = Display{Width: 128, Height: 128}
 
-	p.ControlReg = 0xFF
-	p.MaskReg = 0xFF
-	p.StatusReg = 0xFF
+	p.ControlReg = 0x00
+	p.MaskReg = 0x00
+	p.StatusReg = 0x00
+	p.SetStatus(S_VBLANK_FLAG, true)
+	p.SetStatus(S_SPRITE_OVERFLOW, true)
 }
 
 func (p *PPUC202) ConnectCartridge(cartridge *cartridge.Cartridge) {
@@ -103,7 +120,9 @@ func (p *PPUC202) Clock() {
 
 	if p.scanline == 241 && p.cycle == 1 {
 		p.SetStatus(S_VBLANK_FLAG, true)
+
 		if p.GetControl(C_ENABLE_MMI) {
+			//fmt.Println("nmi")
 			p.NMI = true
 		}
 	}
@@ -116,7 +135,6 @@ func (p *PPUC202) Clock() {
 		if p.scanline >= 261 {
 			p.scanline = -1
 			p.FrameComplete = true
-			fmt.Println("Frame completed")
 		}
 	}
 }
@@ -144,7 +162,12 @@ func (p *PPUC202) CPUWrite(addr uint16, data uint8) {
 		}
 	case 0x0007: // PPU Data
 		p.PPUWrite(p.Address, data)
-		p.Address++
+		if p.GetControl(C_INCREMENT_MODE) {
+			p.Address += 32
+		} else {
+			p.Address++
+		}
+
 	default:
 		panic("cpu tried accessing forbidden data [WRITE]:" + fmt.Sprint(addr))
 	}
@@ -204,7 +227,7 @@ func (p *PPUC202) CPURead(addr uint16, readOnly bool) uint8 {
 	case 0x0007: // PPU Data
 		data = p.DataBuffer
 		p.DataBuffer = p.PPURead(p.Address, false)
-		if p.Address > 0x3F00 {
+		if p.Address >= 0x3F00 {
 			data = p.DataBuffer
 		}
 		p.Address++
@@ -223,6 +246,35 @@ func (p *PPUC202) PPURead(addr uint16, readOnly bool) uint8 {
 		data = p.Pattern[(addr&0x1000)>>12][addr&0x0FFF]
 
 	} else if addr >= 0x2000 && addr <= 0x3EFF {
+		addr &= 0x0FFF
+		if p.Cartridge.Mirror == cartridge.VERTICAL {
+			if addr <= 0x03FF {
+				data = p.Nametable[0][addr&0x3FF]
+			}
+			if addr >= 0x0400 && addr <= 0x07FF {
+				data = p.Nametable[1][addr&0x03FF]
+			}
+			if addr >= 0x0800 && addr <= 0x0BFF {
+				data = p.Nametable[0][addr&0x03FF]
+			}
+			if addr >= 0x0C00 && addr <= 0x0FFF {
+				data = p.Nametable[1][addr&0x03FF]
+			}
+		} else if p.Cartridge.Mirror == cartridge.HORIZONTAL {
+			if addr <= 0x03FF {
+				data = p.Nametable[0][addr&0x3FF]
+			}
+			if addr >= 0x0400 && addr <= 0x07FF {
+				data = p.Nametable[0][addr&0x3FF]
+			}
+			if addr >= 0x0800 && addr <= 0x0BFF {
+				data = p.Nametable[1][addr&0x3FF]
+			}
+			if addr >= 0x0C00 && addr <= 0x0FFF {
+				data = p.Nametable[1][addr&0x3FF]
+			}
+		}
+
 	} else if addr >= 0x3F00 && addr <= 0x3FFF {
 		addr &= 0x001F
 		if addr == 0x0010 {
@@ -247,7 +299,39 @@ func (p *PPUC202) PPUWrite(addr uint16, data uint8) {
 	} else if addr <= 0x1FFF {
 		p.Pattern[(addr&0x1000)>>12][addr&0x0FFF] = data
 	} else if addr >= 0x2000 && addr <= 0x3EFF {
+		addr &= 0x0FFF
+		if p.Cartridge.Mirror == cartridge.VERTICAL {
 
+			if addr <= 0x03FF {
+				p.Nametable[0][addr&0x3FF] = data
+			}
+			if addr >= 0x0400 && addr <= 0x07FF {
+				p.Nametable[1][addr&0x03FF] = data
+			}
+			if addr >= 0x0800 && addr <= 0x0BFF {
+				p.Nametable[0][addr&0x03FF] = data
+			}
+			if addr >= 0x0C00 && addr <= 0x0FFF {
+				p.Nametable[1][addr&0x03FF] = data
+			}
+		} else if p.Cartridge.Mirror == cartridge.HORIZONTAL {
+			//fmt.Println(emutools.Hex(addr, 4))
+			if addr <= 0x03FF {
+				p.Nametable[0][addr&0x3FF] = data
+			}
+			if addr >= 0x0400 && addr <= 0x07FF {
+
+				p.Nametable[0][addr&0x3FF] = data
+			}
+			if addr >= 0x0800 && addr <= 0x0BFF {
+
+				p.Nametable[1][addr&0x3FF] = data
+			}
+			if addr >= 0x0C00 && addr <= 0x0FFF {
+
+				p.Nametable[1][addr&0x3FF] = data
+			}
+		}
 	} else if addr >= 0x3F00 && addr <= 0x3FFF {
 		addr &= 0x001F
 		if addr == 0x0010 {
@@ -259,6 +343,9 @@ func (p *PPUC202) PPUWrite(addr uint16, data uint8) {
 		} else if addr == 0x001C {
 			addr = 0x000C
 		}
+		//fmt.Println("palette write")
 		p.Palette[addr] = data
+	} else {
+		fmt.Println("invalid ppu write")
 	}
 }

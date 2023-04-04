@@ -6,6 +6,7 @@ import (
 	"math/rand"
 
 	"github.com/sc-js/go_nes/bus"
+	"github.com/sc-js/go_nes/emutools"
 	t "github.com/sc-js/go_nes/emutools"
 	ppu2c02 "github.com/sc-js/go_nes/ppu2C02"
 	"github.com/veandco/go-sdl2/sdl"
@@ -49,7 +50,7 @@ const (
 func (c *SDLController) DrawDisplay(d *ppu2c02.Display, xoff int32) {
 	for x := 0; x < int(d.Width); x++ {
 		for y := 0; y < int(d.Height); y++ {
-			rect := sdl.Rect{X: int32(x) + xoff, Y: int32(y), W: 1, H: 1}
+			rect := sdl.Rect{X: int32(x) + xoff, Y: int32(y) + 500, W: 1, H: 1}
 			c.Surface.FillRect(&rect, sdl.MapRGBA(c.Surface.Format, d.Data[x][y].R, d.Data[x][y].G, d.Data[x][y].B, d.Data[x][y].A))
 		}
 	}
@@ -126,6 +127,13 @@ func (c *SDLController) Refresh() {
 	c.DrawCPUFlags()
 	c.DrawDisplay(c.Bus.PPU.GetPatternTable(1, 0), 0)
 	c.DrawDisplay(c.Bus.PPU.GetPatternTable(0, 0), 300)
+
+	for y := 0; y < 30; y++ {
+		for x := 0; x < 32; x++ {
+			c.DrawText(uint(x)*16, uint(y)*16, emutools.Hex(uint32(c.Bus.PPU.Nametable[0][y*32+x]), 2), FONT_12, WHITE)
+		}
+	}
+
 	//c.DrawRAMPage0()
 	//c.DrawRAMPage8000()
 	c.DrawDisassembly()
@@ -137,6 +145,19 @@ func (c *SDLController) Start() {
 
 	for c.Running {
 		c.Refresh()
+		for {
+			c.Bus.Clock()
+			if c.Bus.PPU.FrameComplete {
+				c.Bus.PPU.FrameComplete = false
+				for {
+					if c.Bus.CPU.GetCycles() == 0 {
+						break
+					}
+					c.Bus.Clock()
+				}
+				break
+			}
+		}
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			//rect := sdl.Rect{X: 0, Y: 0, W: c.Surface.W, H: c.Surface.H}
@@ -158,14 +179,14 @@ func (c *SDLController) Start() {
 					}
 					if t.Keysym.Sym == sdl.K_SPACE {
 
-						for {
+						/*for {
 							c.Bus.CPU.Clock()
 							if c.Bus.CPU.GetCycles() == 0 {
 								break
 							}
 
-						}
-						/*for {
+						}*/
+						for {
 							c.Bus.Clock()
 							if c.Bus.PPU.FrameComplete {
 								c.Bus.PPU.FrameComplete = false
@@ -177,14 +198,14 @@ func (c *SDLController) Start() {
 								}
 								break
 							}
-						}*/
+						}
 
 					}
 				}
 			}
 		}
 
-		sdl.Delay(16)
+		//sdl.Delay(16)
 	}
 }
 

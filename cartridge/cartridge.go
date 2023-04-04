@@ -15,6 +15,8 @@ type Cartridge struct {
 	PRGBanks uint8
 	CHRBanks uint8
 
+	Mirror uint8
+
 	Header cartridgeHeader
 	Mapper mappers.Mapper
 }
@@ -30,6 +32,13 @@ type cartridgeHeader struct {
 	TVSystem2    uint8
 	Unused       string
 }
+
+const (
+	HORIZONTAL   = 1
+	VERTICAL     = 2
+	ONESCREEN_LO = 3
+	ONESCREEN_HI = 4
+)
 
 const (
 	HEADER_LENGTH   = 16
@@ -51,7 +60,11 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 		Unused:       string(data[10:HEADER_LENGTH]),
 	}
 	c.MapperID = ((c.Header.Mapper2 >> 4) << 4) | (c.Header.Mapper1 >> 4)
-	fmt.Println("MapperID:", c.MapperID)
+	if (c.Header.Mapper1 & 0x01) >= 1 {
+		c.Mirror = VERTICAL
+	} else {
+		c.Mirror = HORIZONTAL
+	}
 
 	trLenth := TRAINING_LENGTH
 

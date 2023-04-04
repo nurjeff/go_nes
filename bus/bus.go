@@ -24,8 +24,8 @@ func (b *Bus) Initialize() {
 		b.CPURAM[i] = 0x00
 	}
 
-	b.CPURAM[0xFFFC&0x07FF] = 0x00
-	b.CPURAM[0xFFFD&0x07FF] = 0x80
+	//b.CPURAM[0xFFFC&0x07FF] = 0x00
+	//b.CPURAM[0xFFFD&0x07FF] = 0x80
 
 	// Create CPU with reference to this bus
 	b.CPU = cpu6502.CPU6502{ReadBus: b.cpuRead, WriteBus: b.cpuWrite}
@@ -55,5 +55,6 @@ func (b *Bus) cpuRead(addr uint16, readOnly bool) uint8 {
 	} else if addr >= 0x2000 && addr <= 0x3FFF {
 		return b.PPU.CPURead(addr&0x0007, readOnly)
 	}
+
 	return data
 }
