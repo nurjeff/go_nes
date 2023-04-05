@@ -13,9 +13,20 @@ type Bus struct {
 	CPURAM    [2048]uint8
 
 	SystemClockCounter uint64
+
+	Controller      [2]uint8
+	ControllerState [2]uint8
+
+	DMAPage uint8
+	DMAAddr uint8
+	DMAData uint8
+
+	DMATransfer bool
+	DMADummy    bool
 }
 
 func (b *Bus) Initialize() {
+	b.DMADummy = true
 	if b.Cartridge == nil {
 		panic("insert cartridge first")
 	}
@@ -28,14 +39,17 @@ func (b *Bus) Initialize() {
 	//b.CPURAM[0xFFFD&0x07FF] = 0x80
 
 	// Create CPU with reference to this bus
+	b.PPU = ppu2c02.PPUC202{Cartridge: b.Cartridge}
+	for index := range b.PPU.OAM {
+		b.PPU.OAM[index] = ppu2c02.ObjectAttributeEntity{}
+	}
+	b.PPU.Initialize()
 	b.CPU = cpu6502.CPU6502{ReadBus: b.cpuRead, WriteBus: b.cpuWrite}
 
 	b.CPU.Initialize()
 	b.CPU.Disassemble(0x0000, 0xFFFF)
 	b.CPU.Reset()
 
-	b.PPU = ppu2c02.PPUC202{Cartridge: b.Cartridge}
-	b.PPU.Initialize()
 }
 
 func (b *Bus) cpuWrite(addr uint16, data uint8) {
@@ -44,6 +58,13 @@ func (b *Bus) cpuWrite(addr uint16, data uint8) {
 		b.CPURAM[addr&0x07FF] = data
 	} else if addr >= 0x2000 && addr <= 0x3FFF {
 		b.PPU.CPUWrite(addr&0x0007, data)
+	} else if addr == 0x4014 {
+		b.DMAPage = data
+		b.DMAAddr = 0x00
+		b.DMATransfer = true
+	} else if addr >= 0x4016 && addr <= 0x4017 {
+
+		b.ControllerState[addr&0x0001] = b.Controller[addr&0x0001]
 	}
 }
 
@@ -54,6 +75,14 @@ func (b *Bus) cpuRead(addr uint16, readOnly bool) uint8 {
 		return b.CPURAM[addr&0x07FF]
 	} else if addr >= 0x2000 && addr <= 0x3FFF {
 		return b.PPU.CPURead(addr&0x0007, readOnly)
+	} else if addr >= 0x4016 && addr <= 0x4017 {
+		if (b.ControllerState[addr&0x0001] & 0x80) > 0 {
+			data = 1
+		} else {
+			data = 0
+		}
+
+		b.ControllerState[addr&0x0001] <<= 1
 	}
 
 	return data

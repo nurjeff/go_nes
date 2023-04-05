@@ -143,6 +143,7 @@ func (c *SDLController) Refresh() {
 	//c.DrawRAMPage0()
 	//c.DrawRAMPage8000()
 	c.DrawDisassembly()
+	//c.DrawOAM()
 	c.Window.UpdateSurface()
 }
 
@@ -166,8 +167,6 @@ func (c *SDLController) Start() {
 		}
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
-			//rect := sdl.Rect{X: 0, Y: 0, W: c.Surface.W, H: c.Surface.H}
-			//c.Surface.FillRect(&rect, 0x0)
 			case *sdl.QuitEvent:
 				c.Running = false
 			case *sdl.KeyboardEvent:
@@ -179,12 +178,66 @@ func (c *SDLController) Start() {
 						selectedPalette++
 						selectedPalette &= 0x07
 					}
+
+					if t.Keysym.Sym == sdl.K_a {
+						c.Bus.Controller[0] = clearBit(c.Bus.Controller[0], 5)
+					}
+					if t.Keysym.Sym == sdl.K_s {
+						c.Bus.Controller[0] = clearBit(c.Bus.Controller[0], 4)
+					}
+					if t.Keysym.Sym == sdl.K_x {
+						c.Bus.Controller[0] = clearBit(c.Bus.Controller[0], 7)
+					}
+					if t.Keysym.Sym == sdl.K_y {
+						c.Bus.Controller[0] = clearBit(c.Bus.Controller[0], 6)
+					}
+					if t.Keysym.Sym == sdl.K_DOWN {
+						c.Bus.Controller[0] = clearBit(c.Bus.Controller[0], 2)
+					}
+					if t.Keysym.Sym == sdl.K_UP {
+						c.Bus.Controller[0] = clearBit(c.Bus.Controller[0], 3)
+					}
+					if t.Keysym.Sym == sdl.K_LEFT {
+						c.Bus.Controller[0] = clearBit(c.Bus.Controller[0], 1)
+					}
+					if t.Keysym.Sym == sdl.K_RIGHT {
+						c.Bus.Controller[0] = clearBit(c.Bus.Controller[0], 0)
+					}
+				} else {
+					if t.Keysym.Sym == sdl.K_a {
+						c.Bus.Controller[0] |= 0x20
+					}
+					if t.Keysym.Sym == sdl.K_s {
+						c.Bus.Controller[0] |= 0x10
+					}
+					if t.Keysym.Sym == sdl.K_x {
+						c.Bus.Controller[0] |= 0x80
+					}
+					if t.Keysym.Sym == sdl.K_y {
+						c.Bus.Controller[0] |= 0x40
+					}
+					if t.Keysym.Sym == sdl.K_DOWN {
+						c.Bus.Controller[0] |= 0x04
+					}
+					if t.Keysym.Sym == sdl.K_UP {
+						c.Bus.Controller[0] |= 0x08
+					}
+					if t.Keysym.Sym == sdl.K_LEFT {
+						c.Bus.Controller[0] |= 0x02
+					}
+					if t.Keysym.Sym == sdl.K_RIGHT {
+						c.Bus.Controller[0] |= 0x01
+					}
 				}
 			}
 		}
-
-		//sdl.Delay(16)
 	}
+}
+
+func clearBit(n uint8, pos uint) uint8 {
+	var mask uint8 = ^(1 << pos)
+	n &= mask
+	return n
 }
 
 func (c *SDLController) DrawRAMPage0() {
@@ -294,6 +347,15 @@ func (c *SDLController) DrawCPUFlags() {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 136, "Z", FONT_20, RED)
 	} else {
 		c.DrawText((uint(c.Surface.W)-xoff)+flagoff, 136, "Z", FONT_20, GREEN)
+	}
+}
+
+func (c *SDLController) DrawOAM() {
+	var xoff uint = 400
+	for i := 0; i < 26; i++ {
+		str := ""
+		str += emutools.Hex(i, 2) + ": (" + fmt.Sprint(c.Bus.PPU.POAM[i*4+3]) + ", " + fmt.Sprint(c.Bus.PPU.POAM[i*4+0]) + ") " + "ID: " + emutools.Hex(c.Bus.PPU.POAM[i*4+1], 2) + " AT:" + emutools.Hex(c.Bus.PPU.POAM[i*4+2], 2)
+		c.DrawText(uint(c.Surface.W-int32(xoff)), 200+(uint(i)*10), str, FONT_13, WHITE)
 	}
 }
 
