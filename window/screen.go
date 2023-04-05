@@ -13,6 +13,8 @@ import (
 	"github.com/veandco/go-sdl2/ttf"
 )
 
+const UPRES = 3
+
 type SDLController struct {
 	Window  *sdl.Window
 	Surface *sdl.Surface
@@ -27,6 +29,8 @@ type SDLController struct {
 var fonts []int = []int{FONT_12, FONT_13, FONT_14, FONT_15, FONT_18, FONT_20, FONT_24, FONT_32, FONT_38, FONT_42}
 
 const DRAW_GAME = true
+
+var selectedPalette uint8
 
 const (
 	FONT_12 = 12
@@ -47,10 +51,10 @@ const (
 	PURPLE = 84
 )
 
-func (c *SDLController) DrawDisplay(d *ppu2c02.Display, xoff int32) {
+func (c *SDLController) DrawDisplay(d *ppu2c02.Display, xoff int32, yoff int32, ss int32) {
 	for x := 0; x < int(d.Width); x++ {
 		for y := 0; y < int(d.Height); y++ {
-			rect := sdl.Rect{X: int32(x) + xoff, Y: int32(y) + 500, W: 1, H: 1}
+			rect := sdl.Rect{X: (int32(x) * ss) + xoff, Y: (int32(y) * ss) + yoff, W: 1 * ss, H: 1 * ss}
 			c.Surface.FillRect(&rect, sdl.MapRGBA(c.Surface.Format, d.Data[x][y].R, d.Data[x][y].G, d.Data[x][y].B, d.Data[x][y].A))
 		}
 	}
@@ -125,14 +129,16 @@ func (c *SDLController) Refresh() {
 	c.Surface.FillRect(&rect, 0x1e2124)
 
 	c.DrawCPUFlags()
-	c.DrawDisplay(c.Bus.PPU.GetPatternTable(1, 0), 0)
-	c.DrawDisplay(c.Bus.PPU.GetPatternTable(0, 0), 300)
+	c.DrawDisplay(c.Bus.PPU.GetPatternTable(1, selectedPalette), 800, 500, 1)
+	c.DrawDisplay(c.Bus.PPU.GetPatternTable(0, selectedPalette), 950, 500, 1)
+	c.DrawDisplay(&c.Bus.PPU.SprScreen, 0, 0, UPRES)
+	c.DrawText(800, 650, "[SPACE] Palette: 0x0"+emutools.Hex(selectedPalette, 2), FONT_14, YELLOW)
 
-	for y := 0; y < 30; y++ {
+	/*for y := 0; y < 30; y++ {
 		for x := 0; x < 32; x++ {
 			c.DrawText(uint(x)*16, uint(y)*16, emutools.Hex(uint32(c.Bus.PPU.Nametable[0][y*32+x]), 2), FONT_12, WHITE)
 		}
-	}
+	}*/
 
 	//c.DrawRAMPage0()
 	//c.DrawRAMPage8000()
@@ -168,38 +174,10 @@ func (c *SDLController) Start() {
 				if t.State == sdl.RELEASED {
 					if t.Keysym.Sym == sdl.K_v {
 						c.Bus.CPU.NMI()
-						/*for i := 0; i < 100; i++ {
-							for {
-								c.Bus.Clock()
-								if c.Bus.CPU.GetCycles() == 0 {
-									break
-								}
-							}
-						}*/
 					}
 					if t.Keysym.Sym == sdl.K_SPACE {
-
-						/*for {
-							c.Bus.CPU.Clock()
-							if c.Bus.CPU.GetCycles() == 0 {
-								break
-							}
-
-						}*/
-						for {
-							c.Bus.Clock()
-							if c.Bus.PPU.FrameComplete {
-								c.Bus.PPU.FrameComplete = false
-								for {
-									if c.Bus.CPU.GetCycles() == 0 {
-										break
-									}
-									c.Bus.Clock()
-								}
-								break
-							}
-						}
-
+						selectedPalette++
+						selectedPalette &= 0x07
 					}
 				}
 			}
@@ -257,7 +235,7 @@ func (c *SDLController) DrawRAMPage8000() {
 
 func (c *SDLController) DrawCPUFlags() {
 	var offset uint = 34
-	var xoff uint = 280
+	var xoff uint = 400
 	var flagoff uint = 180
 
 	c.DrawText(uint(c.Surface.W)-xoff, 17, "CPU", FONT_20, WHITE)
@@ -320,10 +298,10 @@ func (c *SDLController) DrawCPUFlags() {
 }
 
 func (c *SDLController) DrawDisassembly() {
-	var xoff uint = 280
+	var xoff uint = 400
 	padding := 16
 
-	c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H) - 420), c.Bus.CPU.Disassembly[c.Bus.CPU.PC()], FONT_15, PURPLE)
+	c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H) - 400), c.Bus.CPU.Disassembly[c.Bus.CPU.PC()], FONT_15, PURPLE)
 
 	o := 1
 	for i := 0; i < 8; i++ {
@@ -333,7 +311,7 @@ func (c *SDLController) DrawDisassembly() {
 			o++
 		}
 		o = 1
-		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-420)+uint(i*padding)+uint(padding), nextInst, FONT_15, WHITE)
+		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-400)+uint(i*padding)+uint(padding), nextInst, FONT_15, WHITE)
 	}
 
 	o = 1
@@ -344,7 +322,7 @@ func (c *SDLController) DrawDisassembly() {
 			o++
 		}
 		o = 1
-		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-420)-uint(i*padding)-uint(padding), nextInst, FONT_15, WHITE)
+		c.DrawText(uint(c.Surface.W-int32(xoff)), (uint(c.Surface.H)-400)-uint(i*padding)-uint(padding), nextInst, FONT_15, WHITE)
 	}
 }
 

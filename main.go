@@ -14,16 +14,15 @@ import (
 func main() {
 
 	cartridge := cartridge.Cartridge{}
-	cartridge.Initialize("./assets/donkeykong.nes")
+	cartridge.Initialize("./assets/iceclimber.nes")
 
 	bus := bus.Bus{}
 	bus.InsertCartidge(&cartridge)
 	bus.Initialize()
-
 	sdlController := window.SDLController{Bus: &bus}
 	//go loadROM("./nt.nes", &bus)
 
-	if err := sdlController.Initialize(1100, 750, "cmgc"); err != nil {
+	if err := sdlController.Initialize(1200, 720, "cmgc"); err != nil {
 		panic(err)
 	}
 }
