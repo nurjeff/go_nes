@@ -66,6 +66,7 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 		c.Mirror = HORIZONTAL
 	}
 
+	fmt.Println("Read header:", c.Header)
 	trLenth := TRAINING_LENGTH
 
 	// Check if we need to skip trainer data
@@ -96,7 +97,7 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 
 	switch c.MapperID {
 	case 0:
-		c.Mapper = mappers.Mapper0{}
+		c.Mapper = mappers.Mapper0{PRGBanks: c.PRGBanks, CHRBanks: c.CHRBanks}
 
 	default:
 		panic("unimplemented mapper:" + fmt.Sprint(c.MapperID))

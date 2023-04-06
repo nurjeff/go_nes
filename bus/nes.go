@@ -26,6 +26,7 @@ func (b *Bus) Clock() {
 				if b.SystemClockCounter%2 == 0 {
 					b.DMAData = b.cpuRead((uint16(b.DMAPage)<<8)|uint16(b.DMAAddr), false)
 				} else {
+
 					b.PPU.POAM[b.DMAAddr] = b.DMAData
 					b.DMAAddr++
 

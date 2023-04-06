@@ -6,7 +6,6 @@ import (
 	"math/rand"
 
 	"github.com/sc-js/go_nes/bus"
-	"github.com/sc-js/go_nes/emutools"
 	t "github.com/sc-js/go_nes/emutools"
 	ppu2c02 "github.com/sc-js/go_nes/ppu2C02"
 	"github.com/veandco/go-sdl2/sdl"
@@ -132,7 +131,7 @@ func (c *SDLController) Refresh() {
 	c.DrawDisplay(c.Bus.PPU.GetPatternTable(1, selectedPalette), 800, 500, 1)
 	c.DrawDisplay(c.Bus.PPU.GetPatternTable(0, selectedPalette), 950, 500, 1)
 	c.DrawDisplay(&c.Bus.PPU.SprScreen, 0, 0, UPRES)
-	c.DrawText(800, 650, "[SPACE] Palette: 0x0"+emutools.Hex(selectedPalette, 2), FONT_14, YELLOW)
+	c.DrawText(800, 650, "[SPACE] Palette: 0x0"+t.Hex(selectedPalette, 2), FONT_14, YELLOW)
 
 	/*for y := 0; y < 30; y++ {
 		for x := 0; x < 32; x++ {
@@ -152,19 +151,6 @@ func (c *SDLController) Start() {
 
 	for c.Running {
 		c.Refresh()
-		for {
-			c.Bus.Clock()
-			if c.Bus.PPU.FrameComplete {
-				c.Bus.PPU.FrameComplete = false
-				for {
-					if c.Bus.CPU.GetCycles() == 0 {
-						break
-					}
-					c.Bus.Clock()
-				}
-				break
-			}
-		}
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
@@ -231,7 +217,22 @@ func (c *SDLController) Start() {
 				}
 			}
 		}
+
+		for {
+			c.Bus.Clock()
+
+			if c.Bus.PPU.FrameComplete {
+				c.Bus.PPU.FrameComplete = false
+				for c.Bus.CPU.GetCycles() > 0 {
+					c.Bus.CPU.Clock()
+				}
+
+				break
+
+			}
+		}
 	}
+	sdl.Delay(16)
 }
 
 func clearBit(n uint8, pos uint) uint8 {
@@ -354,7 +355,7 @@ func (c *SDLController) DrawOAM() {
 	var xoff uint = 400
 	for i := 0; i < 26; i++ {
 		str := ""
-		str += emutools.Hex(i, 2) + ": (" + fmt.Sprint(c.Bus.PPU.POAM[i*4+3]) + ", " + fmt.Sprint(c.Bus.PPU.POAM[i*4+0]) + ") " + "ID: " + emutools.Hex(c.Bus.PPU.POAM[i*4+1], 2) + " AT:" + emutools.Hex(c.Bus.PPU.POAM[i*4+2], 2)
+		str += t.Hex(i, 2) + ": (" + fmt.Sprint(c.Bus.PPU.POAM[i*4+3]) + ", " + fmt.Sprint(c.Bus.PPU.POAM[i*4+0]) + ") " + "ID: " + t.Hex(c.Bus.PPU.POAM[i*4+1], 2) + " AT:" + t.Hex(c.Bus.PPU.POAM[i*4+2], 2)
 		c.DrawText(uint(c.Surface.W-int32(xoff)), 200+(uint(i)*10), str, FONT_13, WHITE)
 	}
 }

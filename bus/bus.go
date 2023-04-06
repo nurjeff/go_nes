@@ -53,6 +53,7 @@ func (b *Bus) Initialize() {
 }
 
 func (b *Bus) cpuWrite(addr uint16, data uint8) {
+
 	if b.Cartridge.CPUWrite(addr, data) {
 	} else if addr <= 0x1FFF {
 		b.CPURAM[addr&0x07FF] = data
@@ -63,7 +64,6 @@ func (b *Bus) cpuWrite(addr uint16, data uint8) {
 		b.DMAAddr = 0x00
 		b.DMATransfer = true
 	} else if addr >= 0x4016 && addr <= 0x4017 {
-
 		b.ControllerState[addr&0x0001] = b.Controller[addr&0x0001]
 	}
 }
@@ -81,7 +81,6 @@ func (b *Bus) cpuRead(addr uint16, readOnly bool) uint8 {
 		} else {
 			data = 0
 		}
-
 		b.ControllerState[addr&0x0001] <<= 1
 	}
 

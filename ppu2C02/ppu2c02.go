@@ -102,7 +102,7 @@ const (
 	S_SPRITEZERO_HIT  = (1 << 6)
 	S_SPRITE_OVERFLOW = (1 << 5)
 
-	C_ENABLE_MMI     = (1 << 7)
+	C_ENABLE_NMI     = (1 << 7)
 	C_SLAVE_MODE     = (1 << 6)
 	C_SPRITE_SIZE    = (1 << 5)
 	C_PATTERN_BKG    = (1 << 4)
@@ -143,8 +143,6 @@ func (p *PPUC202) Initialize() {
 	p.ControlReg = 0x00
 	p.MaskReg = 0x00
 	p.StatusReg = 0x00
-	//p.SetStatus(S_VBLANK_FLAG, true)
-	//p.SetStatus(S_SPRITE_OVERFLOW, true)
 }
 
 func (p *PPUC202) ConnectCartridge(cartridge *cartridge.Cartridge) {
@@ -401,7 +399,7 @@ func (p *PPUC202) Clock() {
 	if p.scanline >= 241 && p.scanline < 261 {
 		if p.scanline == 241 && p.cycle == 1 {
 			p.SetStatus(S_VBLANK_FLAG, true)
-			if p.GetControl(C_ENABLE_MMI) {
+			if p.GetControl(C_ENABLE_NMI) {
 				p.NMI = true
 			}
 		}
