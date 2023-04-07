@@ -34,10 +34,6 @@ func (b *Bus) Initialize() {
 	for i := range b.CPURAM {
 		b.CPURAM[i] = 0x00
 	}
-
-	//b.CPURAM[0xFFFC&0x07FF] = 0x00
-	//b.CPURAM[0xFFFD&0x07FF] = 0x80
-
 	// Create CPU with reference to this bus
 	b.PPU = ppu2c02.PPUC202{Cartridge: b.Cartridge}
 	for index := range b.PPU.OAM {

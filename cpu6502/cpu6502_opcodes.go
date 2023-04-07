@@ -1,6 +1,7 @@
 package cpu6502
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 
@@ -522,16 +523,6 @@ func (c *CPU6502) SBC() uint8 {
 	c.SetFlag(c.Flags.V, v)
 	c.a = uint8(c.tmp) & 0x00FF
 	return 1
-
-	/*c.tmp = uint16(c.a) + uint16(value) + uint16(c.GetFlag(c.Flags.C))
-	c.SetFlag(c.Flags.C, c.tmp > 255)
-	c.SetFlag(c.Flags.Z, (c.tmp&0x00FF) == 0)
-	c.SetFlag(c.Flags.N, ((c.tmp&0x80)>>7) >= 1)
-	v := (((^(uint16(c.a) ^ uint16(c.fetched)) & (uint16(c.a) ^ uint16(c.tmp))) & 0x0080) >> 7) >= 1
-	c.SetFlag(c.Flags.V, v)
-	c.a = uint8(c.tmp) & 0x00FF
-
-	return 1*/
 }
 
 func (c *CPU6502) SEC() uint8 {
@@ -609,9 +600,8 @@ func (c *CPU6502) TYA() uint8 {
 	return 0x00
 }
 
-// Not implemented opcodes
-func (c *CPU6502) XXX() uint8 {
-	//fmt.Println("OpCode", emutools.Hex(c.opcode, 2), "not implemented")
+func (c *CPU6502) NIM() uint8 {
+	fmt.Println("OpCode", emutools.Hex(c.opcode, 2), "not implemented")
 	return 0x00
 }
 

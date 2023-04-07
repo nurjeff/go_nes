@@ -14,8 +14,6 @@ func (c *CPU6502) Disassemble(start uint16, stop uint16) {
 
 	var line_addr uint16 = 0
 
-	//fmt.Println(c.opcode)
-
 	for addr <= uint32(stop) {
 		line_addr = uint16(addr)
 		var sInst string = "$" + t.Hex(addr, 4) + ": "

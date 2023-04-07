@@ -91,8 +91,6 @@ func (c *CPU6502) Clock() {
 		c.opcode = c.ReadBus(c.pc, false)
 		c.pc++
 
-		//fmt.Println(c.lookup[c.opcode].name)
-
 		c.cycles = c.lookup[c.opcode].cycles
 		addrCycle := c.lookup[c.opcode].AddrMode()
 		opCycle := c.lookup[c.opcode].OpCode()
@@ -108,7 +106,6 @@ func (c *CPU6502) Clock() {
 
 func (c *CPU6502) Fetch() uint8 {
 	if runtime.FuncForPC(reflect.ValueOf(c.lookup[c.opcode].AddrMode).Pointer()).Name() != runtime.FuncForPC(reflect.ValueOf(c.IMP).Pointer()).Name() {
-		//fmt.Println("ADDR HERE:", emutools.Hex(c.addr_abs, 4))
 		c.fetched = c.ReadBus(c.addr_abs, false)
 	}
 	return c.fetched

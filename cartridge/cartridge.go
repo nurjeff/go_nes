@@ -67,11 +67,8 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 	}
 
 	trLenth := 0
-
-	// Check if we need to skip trainer data
 	if (c.Header.Mapper1 & 0x04) >= 1 {
 		trLenth = TRAINING_LENGTH
-
 	}
 
 	var fileType uint8 = 1
@@ -95,7 +92,7 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 			c.VCHRMemory = make([]uint8, CHR_BANK_SIZE)
 		}
 
-		for ind, i := range data[HEADER_LENGTH+trLenth+len(c.VPRGMemory):] { //HEADER_LENGTH+trLenth+len(c.VPRGMemory)+len(c.VCHRMemory)] {
+		for ind, i := range data[HEADER_LENGTH+trLenth+len(c.VPRGMemory):] {
 			c.VCHRMemory[ind] = i
 		}
 	} else if fileType == 2 {
@@ -105,9 +102,11 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 
 	switch c.MapperID {
 	case 0:
-		c.Mapper = mappers.Mapper0{PRGBanks: c.PRGBanks, CHRBanks: c.CHRBanks}
+		c.Mapper = &mappers.Mapper0{PRGBanks: c.PRGBanks, CHRBanks: c.CHRBanks}
 	case 1:
 		c.Mapper = &mappers.Mapper1{PRGBanks: c.PRGBanks, CHRBanks: c.CHRBanks}
+	case 2:
+		c.Mapper = &mappers.Mapper2{PRGBanks: c.PRGBanks, CHRBanks: c.CHRBanks}
 
 	default:
 		panic("unimplemented mapper:" + fmt.Sprint(c.MapperID))

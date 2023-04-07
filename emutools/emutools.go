@@ -20,6 +20,5 @@ func GetFunName(f interface{}) string {
 
 func GetFunNameAddr(f interface{}) string {
 	n := GetFunName(f)
-	n = n[len(n)-6 : len(n)-3]
-	return n
+	return n[len(n)-6 : len(n)-3]
 }
