@@ -13,17 +13,21 @@ import (
 
 func main() {
 	cartridge := cartridge.Cartridge{}
-	cartridge.Initialize("./assets/ducktales.nes")
+	cartridge.Initialize("./assets/loz.nes")
 
 	bus := bus.Bus{}
 	bus.InsertCartidge(&cartridge)
 	bus.Initialize()
 	sdlController := window.SDLController{Bus: &bus}
+
+	go bus.Boot()
 	//go loadROM("./nt.nes", &bus)
 
 	if err := sdlController.Initialize(1200, 720, "cmgc"); err != nil {
 		panic(err)
 	}
+
+	sdlController.Run()
 }
 
 func loadROM(path string, b *bus.Bus) {

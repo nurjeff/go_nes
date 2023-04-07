@@ -51,6 +51,7 @@ const (
 )
 
 func (c *SDLController) DrawDisplay(d *ppu2c02.Display, xoff int32, yoff int32, ss int32) {
+
 	for x := 0; x < int(d.Width); x++ {
 		for y := 0; y < int(d.Height); y++ {
 			rect := sdl.Rect{X: (int32(x) * ss) + xoff, Y: (int32(y) * ss) + yoff, W: 1 * ss, H: 1 * ss}
@@ -92,7 +93,6 @@ func (c *SDLController) Initialize(resx uint, resy uint, fontname string) error 
 		return err
 	} else {
 		c.Window = window
-		defer c.Window.Destroy()
 	}
 
 	if surface, err := c.Window.GetSurface(); err != nil {
@@ -103,8 +103,6 @@ func (c *SDLController) Initialize(resx uint, resy uint, fontname string) error 
 
 	if err := ttf.Init(); err != nil {
 		return err
-	} else {
-		defer ttf.Quit()
 	}
 
 	for _, element := range fonts {
@@ -117,9 +115,14 @@ func (c *SDLController) Initialize(resx uint, resy uint, fontname string) error 
 	}
 
 	c.Refresh()
-	c.Start()
 
 	return nil
+}
+
+func (c *SDLController) Run() {
+	defer c.Window.Destroy()
+	defer ttf.Quit()
+	c.Start()
 }
 
 func (c *SDLController) Refresh() {
@@ -218,19 +221,8 @@ func (c *SDLController) Start() {
 				}
 			}
 		}
-
-		for {
-			c.Bus.Clock()
-			if c.Bus.PPU.FrameComplete {
-				c.Bus.PPU.FrameComplete = false
-				for c.Bus.CPU.GetCycles() > 0 {
-					c.Bus.CPU.Clock()
-				}
-				break
-			}
-		}
+		sdl.Delay(12)
 	}
-	//sdl.Delay(16)
 }
 
 func clearBit(n uint8, pos uint) uint8 {

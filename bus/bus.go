@@ -1,6 +1,8 @@
 package bus
 
 import (
+	"time"
+
 	"github.com/sc-js/go_nes/cartridge"
 	"github.com/sc-js/go_nes/cpu6502"
 	ppu2c02 "github.com/sc-js/go_nes/ppu2C02"
@@ -82,4 +84,27 @@ func (b *Bus) cpuRead(addr uint16, readOnly bool) uint8 {
 	}
 
 	return data
+}
+
+func (b *Bus) Boot() {
+	var dur time.Duration
+	for {
+		st := time.Now()
+		for {
+			b.Clock()
+			if b.PPU.FrameComplete {
+				b.PPU.FrameComplete = false
+				for b.CPU.GetCycles() > 0 {
+					b.CPU.Clock()
+				}
+
+				break
+			}
+		}
+		dur = time.Since(st)
+		if dur.Milliseconds() < 16 {
+			time.Sleep(time.Millisecond*16 - dur)
+		}
+
+	}
 }

@@ -1,7 +1,5 @@
 package ppu2c02
 
-import "fmt"
-
 type Display struct {
 	Width       int32
 	Height      int32
@@ -10,7 +8,6 @@ type Display struct {
 }
 
 func (d *Display) Initialize() {
-	fmt.Println("Initialized")
 	d.Data = make([][]Pixel, d.Width)
 	for i := range d.Data {
 		d.Data[i] = make([]Pixel, d.Height)
