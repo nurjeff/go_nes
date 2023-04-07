@@ -127,8 +127,8 @@ func (c *SDLController) Render() {
 		//fmt.Println("Waiting for display..")
 		Display := <-c.ScreenTransfer
 		c.Surface.Free()
-		rect := sdl.Rect{X: 0, Y: 0, W: c.Surface.W, H: c.Surface.H}
-		c.Surface.FillRect(&rect, 0x1e2124)
+		//rect := sdl.Rect{X: 0, Y: 0, W: c.Surface.W, H: c.Surface.H}
+		//c.Surface.FillRect(&rect, 0x1e2124)
 		c.DrawDisplay(&Display, 0, 0, UPRES)
 		c.Window.UpdateSurface()
 	}
