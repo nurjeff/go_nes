@@ -13,7 +13,7 @@ import (
 
 func main() {
 	cartridge := cartridge.Cartridge{}
-	cartridge.Initialize("./assets/mbrosreva.nes")
+	cartridge.Initialize("./assets/ducktales.nes")
 
 	bus := bus.Bus{}
 	bus.InsertCartidge(&cartridge)
@@ -24,7 +24,7 @@ func main() {
 	go bus.Boot()
 	//go loadROM("./nt.nes", &bus)
 
-	if err := sdlController.Initialize(1200, 720, "cmgc"); err != nil {
+	if err := sdlController.Initialize(256*window.UPRES, 240*window.UPRES, "cmgc"); err != nil {
 		panic(err)
 	}
 
