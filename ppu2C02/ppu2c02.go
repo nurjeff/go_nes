@@ -63,6 +63,9 @@ type PPUC202 struct {
 	SpriteCount          uint8
 	SpriteShiftPatternLO [8]uint8
 	SpriteShiftPatternHI [8]uint8
+
+	SpriteZeroHitPossible   bool
+	SpriteZeroBeingRendered bool
 }
 
 func (p *PPUC202) GetColourFromPaletteRam(palette uint8, pixel uint8) Pixel {
@@ -240,6 +243,7 @@ func (p *PPUC202) Clock() {
 
 		if p.scanline == -1 && p.cycle == 1 {
 			p.SetStatus(S_VBLANK_FLAG, false)
+			p.SetStatus(S_SPRITEZERO_HIT, false)
 			p.SetStatus(S_SPRITE_OVERFLOW, false)
 			for i := 0; i < 8; i++ {
 				p.SpriteShiftPatternLO[i] = 0
@@ -311,6 +315,7 @@ func (p *PPUC202) Clock() {
 			p.SpriteCount = 0
 
 			var nOAMEntry uint8 = 0
+			p.SpriteZeroHitPossible = false
 			for nOAMEntry < 64 && p.SpriteCount < 9 {
 				var diff int16 = (int16(p.scanline) - int16(p.OAM[nOAMEntry].Y))
 				var check int16 = 8
@@ -319,6 +324,10 @@ func (p *PPUC202) Clock() {
 				}
 				if diff >= 0 && diff < check {
 					if p.SpriteCount < 8 {
+
+						if nOAMEntry == 0 {
+							p.SpriteZeroHitPossible = true
+						}
 						p.SpriteScanline[p.SpriteCount].Attribute = p.OAM[nOAMEntry].Attribute
 						p.SpriteScanline[p.SpriteCount].X = p.OAM[nOAMEntry].X
 						p.SpriteScanline[p.SpriteCount].Y = p.OAM[nOAMEntry].Y
@@ -366,10 +375,10 @@ func (p *PPUC202) Clock() {
 					} else {
 						// sprite is flipped vertically
 						if (p.scanline - int16(p.SpriteScanline[i].Y)) < 8 {
-							SpritePatternAddrLo = (uint16(p.SpriteScanline[i].ID&0x01) << 12) | ((uint16(p.SpriteScanline[i].ID) & 0xFE) << 4) | (7 - (uint16(p.scanline)-uint16(p.SpriteScanline[i].Y))&0x07)
+							SpritePatternAddrLo = (uint16(p.SpriteScanline[i].ID&0x01) << 12) | (((uint16(p.SpriteScanline[i].ID) & 0xFE) + 1) << 4) | (7 - (uint16(p.scanline)-uint16(p.SpriteScanline[i].Y))&0x07)
 
 						} else {
-							SpritePatternAddrLo = (uint16(p.SpriteScanline[i].ID&0x01) << 12) | (((uint16(p.SpriteScanline[i].ID) & 0xFE) + 1) << 4) | (7 - (uint16(p.scanline)-uint16(p.SpriteScanline[i].Y))&0x07)
+							SpritePatternAddrLo = (uint16(p.SpriteScanline[i].ID&0x01) << 12) | ((uint16(p.SpriteScanline[i].ID) & 0xFE) << 4) | (7 - (uint16(p.scanline)-uint16(p.SpriteScanline[i].Y))&0x07)
 						}
 					}
 				}
@@ -435,6 +444,7 @@ func (p *PPUC202) Clock() {
 	var FGPalette uint8
 	var FGPriority uint8
 	if p.GetMask(M_RENDER_SPR) {
+		p.SpriteZeroBeingRendered = false
 		for i := 0; i < int(p.SpriteCount); i++ {
 			if p.SpriteScanline[i].X == 0 {
 				var FGPixelLO uint8 = 0
@@ -454,6 +464,9 @@ func (p *PPUC202) Clock() {
 				}
 
 				if FGPixel != 0 {
+					if i == 0 {
+						p.SpriteZeroBeingRendered = true
+					}
 					break
 				}
 			}
@@ -479,6 +492,28 @@ func (p *PPUC202) Clock() {
 		} else {
 			pixel = BGPixel
 			palette = BGPalette
+		}
+
+		if p.SpriteZeroBeingRendered && p.SpriteZeroHitPossible {
+			if p.GetMask(M_RENDER_BKG) && p.GetMask(M_RENDER_SPR) {
+				mrbl := 0
+				rsl := 0
+				if p.GetMask(M_RENDER_BKG_LEFT) {
+					mrbl = 1
+				}
+				if p.GetMask(M_RENDER_SPR_LEFT) {
+					rsl = 1
+				}
+				if ^(mrbl | rsl) == 1 {
+					if p.cycle >= 9 && p.cycle < 258 {
+						p.SetStatus(S_SPRITEZERO_HIT, true)
+					}
+				} else {
+					if p.cycle >= 1 && p.cycle < 258 {
+						p.SetStatus(S_SPRITEZERO_HIT, true)
+					}
+				}
+			}
 		}
 	}
 
@@ -536,7 +571,7 @@ func (p *PPUC202) CPUWrite(addr uint16, data uint8) {
 		}
 	case 0x0006: // PPU Address
 		if p.AddressLatch == 0 {
-			p.LTRAM.reg = (p.LTRAM.reg & 0x00FF) | (uint16(data) << 8)
+			p.LTRAM.reg = (p.LTRAM.reg & 0x00FF) | (uint16(data&0x3F) << 8)
 			p.AddressLatch = 1
 		} else {
 			p.LTRAM.reg = (p.LTRAM.reg & 0xFF00) | uint16(data)
@@ -651,7 +686,7 @@ func (p *PPUC202) PPURead(addr uint16, readOnly bool) uint8 {
 
 	} else if addr >= 0x2000 && addr <= 0x3EFF {
 		addr &= 0x0FFF
-		if p.Cartridge.Mirror == cartridge.VERTICAL {
+		if p.Cartridge.GetMirror() == cartridge.VERTICAL {
 			if addr <= 0x03FF {
 				data = p.Nametable[0][addr&0x3FF]
 			}
@@ -664,7 +699,7 @@ func (p *PPUC202) PPURead(addr uint16, readOnly bool) uint8 {
 			if addr >= 0x0C00 && addr <= 0x0FFF {
 				data = p.Nametable[1][addr&0x03FF]
 			}
-		} else if p.Cartridge.Mirror == cartridge.HORIZONTAL {
+		} else if p.Cartridge.GetMirror() == cartridge.HORIZONTAL {
 			if addr <= 0x03FF {
 				data = p.Nametable[0][addr&0x3FF]
 			}
@@ -704,8 +739,7 @@ func (p *PPUC202) PPUWrite(addr uint16, data uint8) {
 		p.Pattern[(addr&0x1000)>>12][addr&0x0FFF] = data
 	} else if addr >= 0x2000 && addr <= 0x3EFF {
 		addr &= 0x0FFF
-		if p.Cartridge.Mirror == cartridge.VERTICAL {
-
+		if p.Cartridge.GetMirror() == cartridge.VERTICAL {
 			if addr <= 0x03FF {
 				p.Nametable[0][addr&0x3FF] = data
 			}
@@ -718,7 +752,7 @@ func (p *PPUC202) PPUWrite(addr uint16, data uint8) {
 			if addr >= 0x0C00 && addr <= 0x0FFF {
 				p.Nametable[1][addr&0x03FF] = data
 			}
-		} else if p.Cartridge.Mirror == cartridge.HORIZONTAL {
+		} else if p.Cartridge.GetMirror() == cartridge.HORIZONTAL {
 			if addr <= 0x03FF {
 				p.Nametable[0][addr&0x3FF] = data
 			}

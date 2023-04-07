@@ -7,7 +7,7 @@ type Mapper0 struct {
 	MappedAddr uint32
 }
 
-func (m Mapper0) CPUMapRead(addr uint16) (bool, uint32) {
+func (m Mapper0) CPUMapRead(addr uint16, data *uint8) (bool, uint32) {
 	var mappedAddr uint32 = uint32(addr)
 
 	if addr >= 0x8000 && addr <= 0xFFFF {
@@ -22,7 +22,7 @@ func (m Mapper0) CPUMapRead(addr uint16) (bool, uint32) {
 	return false, mappedAddr
 }
 
-func (m Mapper0) CPUMapWrite(addr uint16) (bool, uint32) {
+func (m Mapper0) CPUMapWrite(addr uint16, data *uint8) (bool, uint32) {
 	mappedAddr := uint32(addr)
 	if addr >= 0x8000 && addr <= 0xFFFF {
 		var tmp uint16 = 0x3FFF
@@ -51,4 +51,12 @@ func (m Mapper0) PPUMapWrite(addr uint16) (bool, uint32) {
 		}
 	}
 	return false, mappedAddr
+}
+
+func (m Mapper0) Initialize() {
+
+}
+
+func (m Mapper0) Reset() {
+
 }

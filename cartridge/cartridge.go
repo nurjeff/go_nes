@@ -66,15 +66,18 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 		c.Mirror = HORIZONTAL
 	}
 
-	fmt.Println("Read header:", c.Header)
-	trLenth := TRAINING_LENGTH
+	trLenth := 0
 
 	// Check if we need to skip trainer data
-	if c.Header.Mapper1&0x04 < 1 {
-		trLenth = 0
+	if (c.Header.Mapper1 & 0x04) >= 1 {
+		trLenth = TRAINING_LENGTH
+
 	}
 
 	var fileType uint8 = 1
+	if (c.Header.Mapper2 & 0x0C) == 0x08 {
+		fileType = 2
+	}
 
 	if fileType == 0 {
 
@@ -86,8 +89,13 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 		}
 
 		c.CHRBanks = c.Header.CHRRomChunks
-		c.VCHRMemory = make([]uint8, CHR_BANK_SIZE*int(c.CHRBanks))
-		for ind, i := range data[HEADER_LENGTH+trLenth+len(c.VPRGMemory) : HEADER_LENGTH+trLenth+len(c.VPRGMemory)+len(c.VCHRMemory)] {
+		if c.CHRBanks > 0 {
+			c.VCHRMemory = make([]uint8, CHR_BANK_SIZE*int(c.CHRBanks))
+		} else {
+			c.VCHRMemory = make([]uint8, CHR_BANK_SIZE)
+		}
+
+		for ind, i := range data[HEADER_LENGTH+trLenth+len(c.VPRGMemory):] { //HEADER_LENGTH+trLenth+len(c.VPRGMemory)+len(c.VCHRMemory)] {
 			c.VCHRMemory[ind] = i
 		}
 	} else if fileType == 2 {
@@ -98,10 +106,16 @@ func (c *Cartridge) readCartridgeData(data []byte) {
 	switch c.MapperID {
 	case 0:
 		c.Mapper = mappers.Mapper0{PRGBanks: c.PRGBanks, CHRBanks: c.CHRBanks}
+	case 1:
+		c.Mapper = &mappers.Mapper1{PRGBanks: c.PRGBanks, CHRBanks: c.CHRBanks}
 
 	default:
 		panic("unimplemented mapper:" + fmt.Sprint(c.MapperID))
 	}
+
+	c.Mapper.Initialize()
+	c.Mapper.Reset()
+	fmt.Println("Using Mapper:", c.MapperID)
 }
 
 func (c *Cartridge) Initialize(filepath string) {
@@ -128,18 +142,27 @@ func (c *Cartridge) Initialize(filepath string) {
 }
 
 func (p *Cartridge) CPUWrite(addr uint16, data uint8) bool {
-	cng, add := p.Mapper.CPUMapWrite(addr)
+	cng, add := p.Mapper.CPUMapWrite(addr, &data)
 	if cng {
-		p.VPRGMemory[add] = data
+		if add == 0xFFFFFFFF {
+			return true
+		} else {
+			p.VPRGMemory[add] = data
+		}
 		return true
 	}
 	return false
 }
 
 func (p *Cartridge) CPURead(addr uint16, data *uint8) bool {
-	cng, add := p.Mapper.CPUMapRead(addr)
+	cng, add := p.Mapper.CPUMapRead(addr, data)
 	if cng {
-		*data = p.VPRGMemory[add]
+		if add == 0xFFFFFFFF {
+			return true
+		} else {
+			*data = p.VPRGMemory[add]
+		}
+
 		return true
 	}
 	return false
@@ -161,4 +184,13 @@ func (p *Cartridge) PPUWrite(addr uint16, data uint8) bool {
 		return true
 	}
 	return false
+}
+
+func (p *Cartridge) GetMirror() uint8 {
+	m := p.Mapper.Mirror()
+	if m == 0 {
+		return p.Mirror
+	} else {
+		return m
+	}
 }

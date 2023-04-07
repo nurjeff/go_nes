@@ -49,6 +49,7 @@ func (b *Bus) Initialize() {
 	b.CPU.Initialize()
 	b.CPU.Disassemble(0x0000, 0xFFFF)
 	b.CPU.Reset()
+	b.Cartridge.Mapper.Reset()
 
 }
 

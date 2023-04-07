@@ -127,11 +127,12 @@ func (c *SDLController) Refresh() {
 	rect := sdl.Rect{X: 0, Y: 0, W: c.Surface.W, H: c.Surface.H}
 	c.Surface.FillRect(&rect, 0x1e2124)
 
-	c.DrawCPUFlags()
-	c.DrawDisplay(c.Bus.PPU.GetPatternTable(1, selectedPalette), 800, 500, 1)
-	c.DrawDisplay(c.Bus.PPU.GetPatternTable(0, selectedPalette), 950, 500, 1)
+	//c.DrawCPUFlags()
+	//c.DrawDisplay(c.Bus.PPU.GetPatternTable(1, selectedPalette), 800, 500, 1)
+
+	//c.DrawDisplay(c.Bus.PPU.GetPatternTable(0, selectedPalette), 950, 500, 1)
 	c.DrawDisplay(&c.Bus.PPU.SprScreen, 0, 0, UPRES)
-	c.DrawText(800, 650, "[SPACE] Palette: 0x0"+t.Hex(selectedPalette, 2), FONT_14, YELLOW)
+	//c.DrawText(800, 650, "[SPACE] Palette: 0x0"+t.Hex(selectedPalette, 2), FONT_14, YELLOW)
 
 	/*for y := 0; y < 30; y++ {
 		for x := 0; x < 32; x++ {
@@ -141,7 +142,7 @@ func (c *SDLController) Refresh() {
 
 	//c.DrawRAMPage0()
 	//c.DrawRAMPage8000()
-	c.DrawDisassembly()
+	//c.DrawDisassembly()
 	//c.DrawOAM()
 	c.Window.UpdateSurface()
 }
@@ -220,19 +221,16 @@ func (c *SDLController) Start() {
 
 		for {
 			c.Bus.Clock()
-
 			if c.Bus.PPU.FrameComplete {
 				c.Bus.PPU.FrameComplete = false
 				for c.Bus.CPU.GetCycles() > 0 {
 					c.Bus.CPU.Clock()
 				}
-
 				break
-
 			}
 		}
 	}
-	sdl.Delay(16)
+	//sdl.Delay(16)
 }
 
 func clearBit(n uint8, pos uint) uint8 {
