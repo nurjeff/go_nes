@@ -15,14 +15,15 @@ import (
 const UPRES = 3
 
 type SDLController struct {
-	Window  *sdl.Window
-	Surface *sdl.Surface
-	ResX    uint
-	ResY    uint
-	Fonts   map[int]*ttf.Font
-	Running bool
-	Bus     *bus.Bus
-	Rand    int
+	Window         *sdl.Window
+	Surface        *sdl.Surface
+	ResX           uint
+	ResY           uint
+	Fonts          map[int]*ttf.Font
+	Running        bool
+	Bus            *bus.Bus
+	Rand           int
+	ScreenTransfer chan ppu2c02.Display
 }
 
 var fonts []int = []int{FONT_12, FONT_13, FONT_14, FONT_15, FONT_18, FONT_20, FONT_24, FONT_32, FONT_38, FONT_42}
@@ -77,6 +78,7 @@ func getColor(font int) sdl.Color {
 }
 
 func (c *SDLController) Initialize(resx uint, resy uint, fontname string) error {
+	c.ScreenTransfer = make(chan ppu2c02.Display)
 	c.Rand = rand.Int()
 	c.Fonts = make(map[int]*ttf.Font)
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
@@ -114,15 +116,30 @@ func (c *SDLController) Initialize(resx uint, resy uint, fontname string) error 
 		}
 	}
 
-	c.Refresh()
+	//c.Refresh()
 
 	return nil
+}
+
+func (c *SDLController) Render() {
+	for {
+		//c.Refresh()
+		//fmt.Println("Waiting for display..")
+		Display := <-c.ScreenTransfer
+		c.Surface.Free()
+		rect := sdl.Rect{X: 0, Y: 0, W: c.Surface.W, H: c.Surface.H}
+		c.Surface.FillRect(&rect, 0x1e2124)
+		c.DrawDisplay(&Display, 0, 0, UPRES)
+		c.Window.UpdateSurface()
+	}
 }
 
 func (c *SDLController) Run() {
 	defer c.Window.Destroy()
 	defer ttf.Quit()
-	c.Start()
+	go c.Start()
+	c.Render()
+
 }
 
 func (c *SDLController) Refresh() {
@@ -154,7 +171,7 @@ func (c *SDLController) Start() {
 	c.Running = true
 
 	for c.Running {
-		c.Refresh()
+		//c.Refresh()
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
@@ -221,7 +238,7 @@ func (c *SDLController) Start() {
 				}
 			}
 		}
-		sdl.Delay(12)
+		sdl.Delay(16)
 	}
 }
 

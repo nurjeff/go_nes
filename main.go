@@ -13,12 +13,13 @@ import (
 
 func main() {
 	cartridge := cartridge.Cartridge{}
-	cartridge.Initialize("./assets/loz.nes")
+	cartridge.Initialize("./assets/mbrosreva.nes")
 
 	bus := bus.Bus{}
 	bus.InsertCartidge(&cartridge)
-	bus.Initialize()
+
 	sdlController := window.SDLController{Bus: &bus}
+	bus.Initialize(&sdlController.ScreenTransfer)
 
 	go bus.Boot()
 	//go loadROM("./nt.nes", &bus)

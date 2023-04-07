@@ -27,7 +27,7 @@ type Bus struct {
 	DMADummy    bool
 }
 
-func (b *Bus) Initialize() {
+func (b *Bus) Initialize(transfer *chan ppu2c02.Display) {
 	b.DMADummy = true
 	if b.Cartridge == nil {
 		panic("insert cartridge first")
@@ -37,7 +37,7 @@ func (b *Bus) Initialize() {
 		b.CPURAM[i] = 0x00
 	}
 	// Create CPU with reference to this bus
-	b.PPU = ppu2c02.PPUC202{Cartridge: b.Cartridge}
+	b.PPU = ppu2c02.PPUC202{Cartridge: b.Cartridge, ScreenTransfer: transfer}
 	for index := range b.PPU.OAM {
 		b.PPU.OAM[index] = ppu2c02.ObjectAttributeEntity{}
 	}
@@ -48,7 +48,6 @@ func (b *Bus) Initialize() {
 	b.CPU.Disassemble(0x0000, 0xFFFF)
 	b.CPU.Reset()
 	b.Cartridge.Mapper.Reset()
-
 }
 
 func (b *Bus) cpuWrite(addr uint16, data uint8) {

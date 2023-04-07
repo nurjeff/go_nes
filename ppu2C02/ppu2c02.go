@@ -66,6 +66,8 @@ type PPUC202 struct {
 
 	SpriteZeroHitPossible   bool
 	SpriteZeroBeingRendered bool
+
+	ScreenTransfer *chan Display
 }
 
 func (p *PPUC202) GetColourFromPaletteRam(palette uint8, pixel uint8) Pixel {
@@ -527,6 +529,8 @@ func (p *PPUC202) Clock() {
 		if p.scanline >= 261 {
 			p.scanline = -1
 			p.FrameComplete = true
+			//fmt.Println(p.SprScreen.Data)
+			*p.ScreenTransfer <- p.SprScreen
 		}
 	}
 }

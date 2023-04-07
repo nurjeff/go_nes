@@ -147,7 +147,7 @@ func (m *Mapper1) PPUMapRead(addr uint16) (bool, uint32) {
 					return true, m.MappedAddr
 				}
 			} else {
-				m.MappedAddr = uint32(m.CHRBankSelect8)*0x2000 + (uint32(addr) & 0x1FFF)
+				m.MappedAddr = uint32(m.CHRBankSelect8)*0x1000 + (uint32(addr) & 0x1FFF)
 				return true, m.MappedAddr
 			}
 		}
