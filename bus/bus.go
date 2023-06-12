@@ -51,7 +51,6 @@ func (b *Bus) Initialize(transfer *chan ppu2c02.Display) {
 }
 
 func (b *Bus) cpuWrite(addr uint16, data uint8) {
-
 	if b.Cartridge.CPUWrite(addr, data) {
 	} else if addr <= 0x1FFF {
 		b.CPURAM[addr&0x07FF] = data

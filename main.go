@@ -13,7 +13,7 @@ import (
 
 func main() {
 	cartridge := cartridge.Cartridge{}
-	cartridge.Initialize("./assets/ducktales.nes")
+	cartridge.Initialize("./nestest.nes")
 
 	bus := bus.Bus{}
 	bus.InsertCartidge(&cartridge)

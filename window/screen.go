@@ -137,8 +137,8 @@ func (c *SDLController) Render() {
 func (c *SDLController) Run() {
 	defer c.Window.Destroy()
 	defer ttf.Quit()
-	go c.Start()
-	c.Render()
+	go c.Render()
+	c.Start()
 
 }
 
