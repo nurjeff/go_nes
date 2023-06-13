@@ -10,7 +10,10 @@ Resources:
 - https://www.youtube.com/@javidx9
 - https://www.masswerk.at/6502/6502_instruction_set.html
 
-CPU - MOS Technology 6502: https://en.wikipedia.org/wiki/MOS_Technology_6502
+---
+
+CPU -      MOS Technology 6502: https://en.wikipedia.org/wiki/MOS_Technology_6502
+
 PPU(GPU) - Ricoh 2C02: https://www.nesdev.org/2C02%20technical%20reference.TXT
 
 ---
