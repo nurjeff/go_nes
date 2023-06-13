@@ -5,7 +5,7 @@ Has support for Mapper 0, 1 and 2 (Legend of Zelda, Mario Bros., Donkey Kong etc
 Passes all the CPU tests of the NesTest ROM. (https://www.nesdev.org/wiki/Emulator_tests)
 Graphics are working fine as far as i can tell, no artifacts apart from the ones the NES has by default.
 
-Also features a visual de-assembler with step-by-step debugging for 6502 assembly. 
+Also features a visual disassembler with step-by-step debugging for 6502 assembly. 
 CPU/PPU registers, used palettes and the first RAM page can be displayed on screen.
 
 Resources:
